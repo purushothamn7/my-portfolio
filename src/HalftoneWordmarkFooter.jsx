@@ -243,7 +243,7 @@ const HWF_CSS = `
 .hwf-wordmark-container {
   position: relative;
   width: 100%;
-  height: clamp(140px, 16.5vw, 320px);
+  height: clamp(72px, 16.5vw, 320px);
   margin-top: 0.75rem;
   overflow: hidden;
 }
@@ -267,7 +267,7 @@ const HWF_CSS = `
 @media (max-width: 860px) {
   .hwf-top {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    row-gap: 28px;
+    row-gap: 24px;
   }
   .hwf-brand {
     grid-column: 1 / -1;
@@ -275,13 +275,56 @@ const HWF_CSS = `
 }
 @media (max-width: 520px) {
   .hwf-top {
-    grid-template-columns: 1fr;
-    row-gap: 24px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 20px;
+    row-gap: 20px;
+    padding: 1.15rem 1.15rem 0;
+  }
+  .hwf-brand {
+    grid-column: 1 / -1;
+    gap: 0.5rem;
+  }
+  .hwf-brand-role {
+    font-size: 0.74rem;
+    letter-spacing: 0.09em;
+  }
+  .hwf-brand-meta {
+    font-size: 0.76rem;
+    line-height: 1.5;
+  }
+  .hwf-brand-email {
+    font-size: 0.76rem;
+  }
+  .hwf-col h3 {
+    margin-bottom: 0.55rem;
+    font-size: 0.68rem;
+  }
+  .hwf-col ul {
+    gap: 0.3rem;
+  }
+  .hwf-col a,
+  .hwf-col .hwf-link-btn {
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
   }
   .hwf-rule {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    margin-top: 18px;
+    padding: 12px 1.15rem 0.25rem;
+    gap: 8px;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+  }
+  .hwf-rule-left {
+    gap: 0.45rem 1rem;
+  }
+  .hwf-rule-bold {
+    font-size: 1.1rem;
+  }
+  .hwf-up {
+    font-size: 0.68rem;
+  }
+  .hwf-wordmark-container {
+    margin-top: 0.35rem;
   }
 }
 `;
@@ -414,7 +457,8 @@ export default function HalftoneWordmarkFooter({
       m.fillText(word, (w - box.width) / 2, baselineY);
 
       const img = m.getImageData(0, 0, w, h).data;
-      const gap = Math.max(3, o.dotGap);
+      // Scale dot density down on mobile so small-screen letters stay crisp and sharp
+      const gap = w < 520 ? 2.6 : w < 768 ? 3.5 : Math.max(3, o.dotGap);
       const cols = Math.ceil(w / gap);
       const rows = Math.ceil(h / gap);
       const tmp = [];

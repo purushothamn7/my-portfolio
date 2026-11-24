@@ -2639,6 +2639,7 @@ export default function App() {
   const [heroName, setHeroName] = useState("PURUSHOTHAM");
   const [isEditingName, setIsEditingName] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [reactionsCount, setReactionsCount] = useState(1);
 
@@ -2860,6 +2861,7 @@ export default function App() {
   }, [currentPage]);
 
   const navigateTo = (page, sectionId) => {
+    setMobileMenuOpen(false);
     setCurrentPage(page);
     setActiveTab(page === "about" || page === "contact" || page === "case-studies" || page === "playground" || page === "services" ? page : sectionId || "home");
     if (page === "contact") {
@@ -2888,6 +2890,7 @@ export default function App() {
   };
 
   const scrollToSection = (id) => {
+    setMobileMenuOpen(false);
     if (currentPage !== "home") {
       navigateTo("home", id);
       return;
@@ -2978,6 +2981,7 @@ export default function App() {
                 alt="Purushotham"
                 className="ca-nav-avatar-img"
               />
+              <span className="ca-mobile-brand-name ca-mono">PURUSHOTHAM</span>
             </button>
 
             <nav className="ca-nav ca-mono">
@@ -3078,8 +3082,70 @@ export default function App() {
                 ♥ Contact
               </button>
             )}
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className={`ca-mobile-menu-btn ${mobileMenuOpen ? "open" : ""}`}
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" width="20" height="20">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" width="20" height="20">
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Clean Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="ca-mobile-drawer ca-mono">
+            <nav className="ca-mobile-drawer-nav" aria-label="Mobile navigation">
+              <button
+                onClick={() => navigateTo("home")}
+                className={`ca-mobile-drawer-link ${currentPage === "home" ? "active" : ""}`}
+              >
+                <span>★</span> Home
+              </button>
+              <button
+                onClick={() => navigateTo("about")}
+                className={`ca-mobile-drawer-link ${currentPage === "about" ? "active" : ""}`}
+              >
+                <span>●</span> About
+              </button>
+              <button
+                onClick={() => navigateTo("services")}
+                className={`ca-mobile-drawer-link ${currentPage === "services" ? "active" : ""}`}
+              >
+                <span>≡</span> Services &amp; Stack
+              </button>
+              <button
+                onClick={() => navigateTo("playground")}
+                className={`ca-mobile-drawer-link ${currentPage === "playground" ? "active" : ""}`}
+              >
+                <span>◆</span> Playground
+              </button>
+              <button
+                onClick={() => navigateTo("contact")}
+                className={`ca-mobile-drawer-link ${currentPage === "contact" ? "active" : ""}`}
+              >
+                <span>♥</span> Contact
+              </button>
+            </nav>
+            <div className="ca-mobile-drawer-socials">
+              <a href="https://github.com/Purushotham07" target="_blank" rel="noreferrer" className="ca-mobile-social-pill">GitHub ↗</a>
+              <a href="https://www.linkedin.com/in/purushotham-n-34603226a" target="_blank" rel="noreferrer" className="ca-mobile-social-pill">LinkedIn ↗</a>
+              <a href="mailto:purushothamkrishna07@gmail.com" className="ca-mobile-social-pill">Email ↗</a>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ========================================================= */}
