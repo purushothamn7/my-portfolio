@@ -273,55 +273,93 @@ const HWF_CSS = `
     grid-column: 1 / -1;
   }
 }
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   .hwf-top {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: 20px;
-    row-gap: 20px;
-    padding: 1.15rem 1.15rem 0;
+    column-gap: 18px;
+    row-gap: 18px;
+    padding: 1.25rem 1.15rem 0;
   }
   .hwf-brand {
     grid-column: 1 / -1;
-    gap: 0.5rem;
+    align-items: center;
+    text-align: center;
+    gap: 0.45rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed rgba(25, 21, 16, 0.16);
+  }
+  .hwf-brand-tag {
+    font-size: 0.76rem;
+    margin-bottom: 0;
   }
   .hwf-brand-role {
-    font-size: 0.74rem;
-    letter-spacing: 0.09em;
+    justify-content: center;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-align: center;
   }
   .hwf-brand-meta {
     font-size: 0.76rem;
-    line-height: 1.5;
+    line-height: 1.48;
+    max-width: 300px;
   }
   .hwf-brand-email {
     font-size: 0.76rem;
   }
+  .hwf-socials {
+    justify-content: center;
+    margin-top: 0.25rem;
+  }
+  .hwf-social-btn {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+  .hwf-col {
+    background: rgba(25, 21, 16, 0.025);
+    border: 1px solid rgba(25, 21, 16, 0.1);
+    border-radius: 8px;
+    padding: 0.85rem 0.9rem;
+  }
   .hwf-col h3 {
     margin-bottom: 0.55rem;
-    font-size: 0.68rem;
+    font-size: 0.66rem;
+    padding-bottom: 0.35rem;
   }
   .hwf-col ul {
     gap: 0.3rem;
   }
   .hwf-col a,
   .hwf-col .hwf-link-btn {
-    font-size: 0.74rem;
-    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    letter-spacing: 0.07em;
+    padding: 0.12rem 0;
   }
   .hwf-rule {
-    margin-top: 18px;
-    padding: 12px 1.15rem 0.25rem;
-    gap: 8px;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
+    margin-top: 16px;
+    padding: 12px 1rem 0.35rem;
+    gap: 6px 8px;
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    justify-content: space-between;
   }
   .hwf-rule-left {
-    gap: 0.45rem 1rem;
+    display: contents;
   }
   .hwf-rule-bold {
-    font-size: 1.1rem;
+    order: -1;
+    flex: 1 0 100%;
+    text-align: center;
+    font-size: 1.2rem;
+    margin-bottom: 0.2rem;
   }
   .hwf-up {
-    font-size: 0.68rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    padding: 0.22rem 0.5rem;
+    border: 1.5px solid rgba(25, 21, 16, 0.26);
+    border-radius: 9999px;
+    opacity: 0.9;
+    white-space: nowrap;
   }
   .hwf-wordmark-container {
     margin-top: 0.35rem;

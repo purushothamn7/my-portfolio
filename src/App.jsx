@@ -1109,33 +1109,6 @@ function PlaygroundView({ navigateTo }) {
         </div>
       </div>
 
-      {/* Short Page Details (3 Clean Cards) */}
-      <div className="ca-playground-details-grid">
-        <div className="ca-playground-detail-card border-blue">
-          <div className="ca-detail-tag ca-mono" style={{ color: "var(--ca-blue)" }}>01 · PHYSICS</div>
-          <h3 className="ca-detail-title">Spring Dynamics</h3>
-          <p className="ca-detail-text">
-            Each glyph is modeled as an independent point-mass with spring restitution, damping velocity, and mouse collision kinetics.
-          </p>
-        </div>
-
-        <div className="ca-playground-detail-card border-yellow">
-          <div className="ca-detail-tag ca-mono" style={{ color: "var(--ca-orange)" }}>02 · BLUEPRINT</div>
-          <h3 className="ca-detail-title">Tactile Inspection</h3>
-          <p className="ca-detail-text">
-            Hovering activates architectural guidelines, tangent vectors, and geometric anchor points computed live.
-          </p>
-        </div>
-
-        <div className="ca-playground-detail-card border-magenta">
-          <div className="ca-detail-tag ca-mono" style={{ color: "var(--ca-magenta)" }}>03 · LIGHTWEIGHT</div>
-          <h3 className="ca-detail-title">Pure Canvas 2D</h3>
-          <p className="ca-detail-text">
-            Rendered at 60fps on HTML5 Canvas with native hardware acceleration and zero external physics libraries.
-          </p>
-        </div>
-      </div>
-
       {/* Bottom Navigation CTA */}
       <div className="ca-playground-footer-nav">
         <button
