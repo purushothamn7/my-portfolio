@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Sticky Stack</title>
+  <style>
+    :root {
+      --tab-w-base: 11.5rem;
+      --tab-slant: 2.25rem;
+      --tab-w-total: calc(var(--tab-w-base) + var(--tab-slant));
+      --tab-h: 2.75rem;
+      --ca-blue: #2563eb;
+      --ca-dark: #191510;
+      --ca-yellow: #f59e0b;
+      --ca-magenta: #ec4899;
+    }
+    body {
+      margin: 0;
+      background: #fdfdfb;
+      font-family: sans-serif;
+    }
+    .spacer-hero {
+      height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      background: #eee;
+    }
+    .work-section {
+      max-width: 1140px;
+      margin: 0 auto;
+      position: relative;
+      padding-bottom: 40vh; /* gives card 4 docking time */
+    }
+    /* Ghost track at sticky position */
+    .sticky-ghost-tabs {
+      position: sticky;
+      top: 4.5rem;
+      height: var(--tab-h);
+      z-index: 5;
+      display: flex;
+      pointer-events: auto;
+    }
+    .ghost-tab {
+      position: absolute;
+      top: 0;
+      height: var(--tab-h);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding-left: 1.5rem;
+      font-weight: 800;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      border: 1px dashed rgba(0,0,0,0.25);
+      background: rgba(0,0,0,0.04);
+      color: rgba(0,0,0,0.4);
+      cursor: pointer;
+    }
+    .ghost-tab-0 { left: 0; width: var(--tab-w-total); clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, 0 100%); }
+    .ghost-tab-1 { left: var(--tab-w-base); width: var(--tab-w-total); padding-left: calc(var(--tab-slant) + 0.85rem); clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, var(--tab-slant) 100%); }
+    .ghost-tab-2 { left: calc(var(--tab-w-base) * 2); width: var(--tab-w-total); padding-left: calc(var(--tab-slant) + 0.85rem); clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, var(--tab-slant) 100%); }
+    .ghost-tab-3 { left: calc(var(--tab-w-base) * 3); width: var(--tab-w-total); padding-left: calc(var(--tab-slant) + 0.85rem); clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, var(--tab-slant) 100%); }
+
+    /* Cards */
+    .stack-article {
+      position: sticky;
+      top: 4.5rem;
+      margin-top: 15vh;
+      border-radius: 0 1.5rem 1.5rem 1.5rem;
+    }
+    .stack-article:first-child {
+      margin-top: calc(-1 * var(--tab-h));
+    }
+    .article-tab-row {
+      display: flex;
+      height: var(--tab-h);
+      position: relative;
+    }
+    .live-tab {
+      height: var(--tab-h);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 800;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: white;
+      border-top: 2px solid rgba(255,255,255,0.7);
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.22);
+      cursor: pointer;
+    }
+    .live-tab-0 {
+      margin-left: 0;
+      width: var(--tab-w-total);
+      padding-left: 1.5rem;
+      clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, 0 100%);
+      background: var(--ca-blue);
+    }
+    .live-tab-1 {
+      margin-left: var(--tab-w-base);
+      width: var(--tab-w-total);
+      padding-left: calc(var(--tab-slant) + 0.85rem);
+      clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, var(--tab-slant) 100%);
+      background: var(--ca-dark);
+    }
+    .live-tab-2 {
+      margin-left: calc(var(--tab-w-base) * 2);
+      width: var(--tab-w-total);
+      padding-left: calc(var(--tab-slant) + 0.85rem);
+      clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, var(--tab-slant) 100%);
+      background: var(--ca-yellow);
+      color: #191510;
+    }
+    .live-tab-3 {
+      margin-left: calc(var(--tab-w-base) * 3);
+      width: var(--tab-w-total);
+      padding-left: calc(var(--tab-slant) + 0.85rem);
+      clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, var(--tab-slant) 100%);
+      background: var(--ca-magenta);
+    }
+
+    .card-body {
+      min-height: 460px;
+      padding: 2.5rem;
+      border-radius: 0 1.5rem 1.5rem 1.5rem;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+      color: white;
+    }
+    .card-body-0 { background: var(--ca-blue); }
+    .card-body-1 { background: var(--ca-dark); }
+    .card-body-2 { background: var(--ca-yellow); color: #191510; }
+    .card-body-3 { background: var(--ca-magenta); }
+
+    .spacer-footer {
+      height: 100vh;
+      background: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="spacer-hero">Hero (Scroll down to see stacking)</div>
+  <div class="work-section">
+    <!-- Ghost tabs to allow clicking any tab upfront -->
+    <div class="sticky-ghost-tabs">
+      <div class="ghost-tab ghost-tab-0" onclick="scrollToCard(0)">✦ PROJECT 01</div>
+      <div class="ghost-tab ghost-tab-1" onclick="scrollToCard(1)">✦ PROJECT 02</div>
+      <div class="ghost-tab ghost-tab-2" onclick="scrollToCard(2)">✦ PROJECT 03</div>
+      <div class="ghost-tab ghost-tab-3" onclick="scrollToCard(3)">✦ PROJECT 04</div>
+    </div>
+
+    <article id="card-0" class="stack-article" style="z-index: 10;">
+      <div class="article-tab-row">
+        <div class="live-tab live-tab-0" onclick="scrollToCard(0)">✦ PROJECT 01</div>
+      </div>
+      <div class="card-body card-body-0">
+        <h1>InviteStory</h1>
+        <p>Project 01 content</p>
+      </div>
+    </article>
+
+    <article id="card-1" class="stack-article" style="z-index: 11;">
+      <div class="article-tab-row">
+        <div class="live-tab live-tab-1" onclick="scrollToCard(1)">✦ PROJECT 02</div>
+      </div>
+      <div class="card-body card-body-1">
+        <h1>GiftThem</h1>
+        <p>Project 02 content</p>
+      </div>
+    </article>
+
+    <article id="card-2" class="stack-article" style="z-index: 12;">
+      <div class="article-tab-row">
+        <div class="live-tab live-tab-2" onclick="scrollToCard(2)">✦ PROJECT 03</div>
+      </div>
+      <div class="card-body card-body-2">
+        <h1>DrexxStudio</h1>
+        <p>Project 03 content</p>
+      </div>
+    </article>
+
+    <article id="card-3" class="stack-article" style="z-index: 13;">
+      <div class="article-tab-row">
+        <div class="live-tab live-tab-3" onclick="scrollToCard(3)">✦ PROJECT 04</div>
+      </div>
+      <div class="card-body card-body-3">
+        <h1>Volt</h1>
+        <p>Project 04 content</p>
+      </div>
+    </article>
+  </div>
+  <div class="spacer-footer">Footer / What I Do</div>
+
+  <script>
+    function scrollToCard(i) {
+      const el = document.getElementById('card-' + i);
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.scrollY - 72;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    }
+  </script>
+</body>
+</html>
+

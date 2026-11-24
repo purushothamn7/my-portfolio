@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Unified Tabs with Real Scroll Motion</title>
+  <style>
+    :root {
+      --tab-w-base: 11.5rem;
+      --tab-slant: 2.25rem;
+      --tab-w-total: calc(var(--tab-w-base) + var(--tab-slant));
+      --tab-h: 2.75rem;
+      --ca-blue: #2563eb;
+      --ca-dark: #191510;
+      --ca-yellow: #f59e0b;
+      --ca-magenta: #ec4899;
+    }
+    body {
+      margin: 0;
+      background: #fdfdfb;
+      font-family: sans-serif;
+    }
+    .fake-nav {
+      position: sticky;
+      top: 0;
+      height: 3.5rem;
+      background: #ffffff;
+      border-bottom: 1px solid #ddd;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      font-weight: bold;
+    }
+    .spacer-hero {
+      height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      background: #faf8f5;
+    }
+    .ca-projects-stack-container {
+      max-width: 1140px;
+      margin: 2rem auto 0;
+      position: relative;
+      padding-bottom: 35vh; /* Dock holding room for Card 4 */
+    }
+    /* Sticky Tab Bar flush below Navbar */
+    .ca-sticky-deck-tabs {
+      position: sticky;
+      top: 3.5rem;
+      height: var(--tab-h);
+      z-index: 40;
+      width: 100%;
+    }
+    .ca-deck-tabs-track {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .ca-deck-tab {
+      position: absolute;
+      top: 0;
+      height: var(--tab-h);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      cursor: pointer;
+      border: none;
+      border-top: 2px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.22);
+      transition: filter 0.2s ease, opacity 0.2s ease;
+      color: #fff;
+    }
+    .ca-deck-tab:not(.active) {
+      filter: brightness(0.8) saturate(85%);
+      opacity: 0.85;
+    }
+    .ca-deck-tab.active {
+      filter: none;
+      opacity: 1;
+      border-top: 2.5px solid #fff;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.35);
+    }
+    .ca-deck-tab-0 {
+      left: 0;
+      width: var(--tab-w-total);
+      padding-left: 1.5rem;
+      clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, 0 100%);
+      background: var(--ca-blue);
+    }
+    .ca-deck-tab-1 {
+      left: var(--tab-w-base);
+      width: var(--tab-w-total);
+      padding-left: calc(var(--tab-slant) + 0.85rem);
+      clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, var(--tab-slant) 100%);
+      background: var(--ca-dark);
+    }
+    .ca-deck-tab-2 {
+      left: calc(var(--tab-w-base) * 2);
+      width: var(--tab-w-total);
+      padding-left: calc(var(--tab-slant) + 0.85rem);
+      clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, var(--tab-slant) 100%);
+      background: var(--ca-yellow);
+      color: #191510;
+    }
+    .ca-deck-tab-3 {
+      left: calc(var(--tab-w-base) * 3);
+      width: var(--tab-w-total);
+      padding-left: calc(var(--tab-slant) + 0.85rem);
+      clip-path: polygon(0 0, calc(100% - var(--tab-slant)) 0, 100% 100%, var(--tab-slant) 100%);
+      background: var(--ca-magenta);
+    }
+
+    /* Cards Stream */
+    .ca-deck-cards-stream {
+      position: relative;
+      margin-top: -2px; /* connects flush with tab bar */
+    }
+    .ca-stack-card-slot {
+      position: sticky;
+      top: calc(3.5rem + var(--tab-h) - 2px); /* docks at ~98px flush below tabs */
+      border-radius: 0 1.5rem 1.5rem 1.5rem;
+      padding: 2.5rem 3rem;
+      min-height: 480px;
+      box-sizing: border-box;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+      margin-bottom: 25vh; /* travel distance for real scrolling motion! */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .ca-stack-card-slot:last-child {
+      margin-bottom: 0;
+    }
+    .card-0 { background: var(--ca-blue); color: white; z-index: 10; }
+    .card-1 { background: var(--ca-dark); color: white; z-index: 11; }
+    .card-2 { background: var(--ca-yellow); color: #191510; z-index: 12; }
+    .card-3 { background: var(--ca-magenta); color: white; z-index: 13; }
+
+    .spacer-footer {
+      height: 100vh;
+      background: #ece8e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="fake-nav">PORTFOLIO NAVBAR (Sticky)</div>
+  <div class="spacer-hero">Hero Section (Scroll down)</div>
+
+  <div class="ca-projects-stack-container">
+    <!-- Sticky Unified Tab Bar -->
+    <div class="ca-sticky-deck-tabs">
+      <div class="ca-deck-tabs-track">
+        <button class="ca-deck-tab ca-deck-tab-0 active" onclick="goToCard(0)">✦ PROJECT 01</button>
+        <button class="ca-deck-tab ca-deck-tab-1" onclick="goToCard(1)">✦ PROJECT 02</button>
+        <button class="ca-deck-tab ca-deck-tab-2" onclick="goToCard(2)">✦ PROJECT 03</button>
+        <button class="ca-deck-tab ca-deck-tab-3" onclick="goToCard(3)">✦ PROJECT 04</button>
+      </div>
+    </div>
+
+    <!-- Cards in Flow that scroll up and stick! -->
+    <div class="ca-deck-cards-stream">
+      <article id="proj-0" class="ca-stack-card-slot card-0">
+        <div>
+          <h2>InviteStory</h2>
+          <p>Digital invitation platform in development...</p>
+        </div>
+        <div>TAGS: EVENT TECH, RSVPS</div>
+      </article>
+
+      <article id="proj-1" class="ca-stack-card-slot card-1">
+        <div>
+          <h2>GiftThem</h2>
+          <p>Cross-platform mobile application creating delightful gift journeys...</p>
+        </div>
+        <div>TAGS: FLUTTER, RIVE ANIMATION</div>
+      </article>
+
+      <article id="proj-2" class="ca-stack-card-slot card-2">
+        <div>
+          <h2>DrexxStudio</h2>
+          <p>Fashion-focused website project exploring modern design...</p>
+        </div>
+        <div>TAGS: FASHION TECH, LOOKBOOK UI</div>
+      </article>
+
+      <article id="proj-3" class="ca-stack-card-slot card-3">
+        <div>
+          <h2>Volt</h2>
+          <p>Helping people actually understand the energy they use at home...</p>
+        </div>
+        <div>TAGS: CLIMATE, DATA DESIGN</div>
+      </article>
+    </div>
+  </div>
+
+  <div class="spacer-footer">Next Section: What I Do</div>
+
+  <script>
+    function goToCard(idx) {
+      const card = document.getElementById('proj-' + idx);
+      if (card) {
+        // Find exact scroll position where this card docks at 98px
+        const dockY = 98; // 3.5rem (56px) + 2.75rem (44px) - 2px
+        const rect = card.getBoundingClientRect();
+        const targetScroll = window.scrollY + rect.top - dockY;
+        window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+      }
+    }
+
+    // Update active tab based on which card is docked
+    window.addEventListener('scroll', () => {
+      const dockY = 98;
+      const cards = [0, 1, 2, 3].map(i => document.getElementById('proj-' + i));
+      let currentIdx = 0;
+      cards.forEach((c, i) => {
+        if (!c) return;
+        const rect = c.getBoundingClientRect();
+        // If card's top is at or within 10px of dockY, it is docked
+        if (rect.top <= dockY + 15) {
+          currentIdx = i;
+        }
+      });
+      document.querySelectorAll('.ca-deck-tab').forEach((tab, i) => {
+        if (i === currentIdx) tab.classList.add('active');
+        else tab.classList.remove('active');
+      });
+    });
+  </script>
+</body>
+</html>
+

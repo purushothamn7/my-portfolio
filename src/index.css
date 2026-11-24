@@ -1,0 +1,245 @@
+:root {
+  --ca-surface: #fdfdfb;
+  --ca-ink: #191510;
+  --ca-gray: #857b69;
+  --ca-chrome: #ece3d1;
+  --ca-tick: #c0b49d;
+  --ca-grid-line: #1915100f;
+  --ca-grid-dot: #19151029;
+  --ca-blue: #2b57d6;
+  --ca-cyan: #b7c6ef;
+  --ca-yellow: #f7c948;
+  --ca-yellow-soft: #f3e2ad;
+  --ca-tan: #f3e2ad;
+  --ca-magenta: #ff4d8d;
+  --ca-pink: #ff4d8d;
+  --ca-green: #16b06a;
+  --ca-mint: #a9dfc6;
+  --ca-pink-soft: #ffc6da;
+  --ca-purple: #cbb8ff;
+  --ca-orange: #ff6a35;
+  --ca-brown: #5c3a2e;
+  --ca-star: #f7c948;
+
+  --font-artsy-display: "Handjet", -apple-system, sans-serif;
+  --font-artsy-hand: "Just Me Again Down Here", cursive;
+  --font-artsy-mono: "DM Mono", monospace;
+  --font-artsy-sans: "Inter", -apple-system, sans-serif;
+
+  --ca-hand: "Just Me Again Down Here", cursive;
+  --ca-display: "Handjet", -apple-system, sans-serif;
+  --ca-mono: "DM Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14.4px; /* 10% less full site size */
+}
+
+html, body {
+  background-color: var(--ca-surface);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 33px,
+    var(--ca-grid-dot) 33px,
+    var(--ca-grid-dot) 34px
+  );
+  background-position: 0 0;
+  color: var(--ca-ink);
+  font-family: var(--font-artsy-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Lined notebook ruled paper background: sections stay transparent so the seamless, continuous 34px body grid shines through everywhere without breaks or mismatched intervals */
+.ca-grid {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Subtle paper grain texture */
+.ca-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.12;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='cn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23cn)'/%3E%3C/svg%3E");
+}
+
+/* Typography Helpers */
+.ca-display {
+  font-family: var(--font-artsy-display);
+  font-variation-settings: "ELGR" 1, "ELSH" 7;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.ca-hand {
+  font-family: var(--font-artsy-hand);
+  letter-spacing: 0.02em;
+}
+
+.ca-mono {
+  font-family: var(--font-artsy-mono);
+}
+
+/* Sketched Hand-drawn Doodle Box */
+.ca-doodle-box {
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Washi Tape Strip Effect */
+.ca-tape-strip {
+  position: absolute;
+  opacity: 0.85;
+  filter: drop-shadow(0 1.5px 2px rgba(25, 21, 16, 0.22));
+}
+
+.ca-tape-strip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0) 35%, rgba(255, 255, 255, 0.2) 65%, rgba(255, 255, 255, 0) 86%);
+}
+
+.ca-tape {
+  position: relative;
+}
+
+.ca-tape::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  border-top: 0 solid transparent;
+  border-bottom: 14px solid rgba(25, 21, 16, 0.22);
+  border-left: 14px solid transparent;
+  border-right: 0 solid transparent;
+}
+
+/* ========================================================= */
+/* SPLASH / INTRO ANIMATIONS (As in Screenshot 1 & Screenshot 2) */
+/* ========================================================= */
+
+.ca-splash-container {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  pointer-events: all;
+  background-color: var(--ca-surface);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 33px,
+    var(--ca-grid-dot) 33px,
+    var(--ca-grid-dot) 34px
+  );
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+
+.ca-splash-container.fading-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Speech bubble pill */
+.ca-splash-bubble {
+  grid-column-start: 1;
+  grid-row-start: 1;
+  border-radius: 1.25rem 1.25rem 1.25rem 0;
+  border: 2px solid var(--ca-ink);
+  background-color: var(--ca-yellow);
+  padding: 0.75rem 1.25rem;
+  font-size: 2rem;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--ca-ink);
+  box-shadow: 2px 3px 0 rgba(25, 21, 16, 0.15);
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (min-width: 640px) {
+  .ca-splash-bubble {
+    font-size: 2.6rem;
+    padding: 0.85rem 1.75rem;
+  }
+}
+
+.ca-splash-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.35em);
+  animation: ca-splash-char-in 0.22s forwards;
+}
+
+@keyframes ca-splash-char-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animations */
+@keyframes ca-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ca-spin-slow {
+  animation: ca-spin 12s linear infinite;
+}
+
+@keyframes ca-blink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+.ca-blink {
+  transform-origin: center;
+  animation: ca-blink 4s ease-in-out infinite;
+}
+
+@keyframes ca-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.ca-float {
+  animation: ca-float 3.5s ease-in-out infinite;
+}
+
+/* Buttons and Interactive Elements */
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
