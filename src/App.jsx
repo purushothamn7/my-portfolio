@@ -2693,10 +2693,12 @@ function HeroTypewriterBlock({ heroRevealed }) {
       setIsDone(true);
     };
 
-    if (prefersReduced || window.scrollY > 45) {
+    if (prefersReduced || (runId === 0 && window.scrollY > 45)) {
       finishAll();
       return;
     }
+
+    const startScrollY = window.scrollY;
 
     // Reset state cleanly for initial load or replay
     setIsDone(false);
@@ -2799,7 +2801,7 @@ function HeroTypewriterBlock({ heroRevealed }) {
     };
 
     const onScrollFastForward = () => {
-      if (window.scrollY > 45) finishAll();
+      if (window.scrollY > startScrollY + 90) finishAll();
     };
 
     window.addEventListener("scroll", onScrollFastForward, { passive: true });
