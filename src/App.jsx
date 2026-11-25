@@ -2592,6 +2592,241 @@ function ServicesView({ navigateTo }) {
   );
 }
 
+// Zero-reflow vintage typewriter block for the Hero headline, bio & Brother-inspired carriage scale
+function renderTypedWords(text, keyPrefix, pauseMs = 0) {
+  const words = text.split(" ");
+  return words.map((word, wIdx) => (
+    <React.Fragment key={`${keyPrefix}-w-${wIdx}`}>
+      <span className="ca-tw-word">
+        {Array.from(word).map((ch, cIdx) => (
+          <span
+            key={`${keyPrefix}-${wIdx}-${cIdx}`}
+            className="ca-tw-char"
+            data-tw="char"
+            data-tw-pause={
+              cIdx === word.length - 1 && wIdx === words.length - 1 && pauseMs
+                ? pauseMs
+                : ch === "."
+                  ? 145
+                  : ch === ","
+                    ? 75
+                    : 0
+            }
+          >
+            {ch}
+          </span>
+        ))}
+      </span>
+      {wIdx < words.length - 1 ? " " : null}
+    </React.Fragment>
+  ));
+}
+
+function HeroTypewriterBlock({ heroRevealed }) {
+  const rootRef = useRef(null);
+  const needleRef = useRef(null);
+  const [isDone, setIsDone] = useState(false);
+  const [runId, setRunId] = useState(0);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !heroRevealed) return;
+
+    const nodes = Array.from(root.querySelectorAll("[data-tw]"));
+    const needle = needleRef.current;
+    if (!nodes.length) return;
+
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let activeCaretNode = null;
+    let finished = false;
+    let rafId = 0;
+
+    const finishAll = () => {
+      if (finished) return;
+      finished = true;
+      cancelAnimationFrame(rafId);
+      if (activeCaretNode) {
+        activeCaretNode.classList.remove("is-caret");
+        activeCaretNode = null;
+      }
+      nodes.forEach((n) => n.classList.add("is-typed"));
+      if (needle) needle.style.left = "50%";
+      setIsDone(true);
+    };
+
+    if (prefersReduced || window.scrollY > 45) {
+      finishAll();
+      return;
+    }
+
+    // Reset state cleanly before starting or replaying
+    setIsDone(false);
+    nodes.forEach((n) => n.classList.remove("is-typed", "is-caret"));
+
+    // Cache horizontal carriage column ratios once before rAF (zero layout reads during animation)
+    const rootRect = root.getBoundingClientRect();
+    const rulerWidth = Math.max(rootRect.width, 1);
+    const ratios = nodes.map((n) => {
+      const r = n.getBoundingClientRect();
+      const raw = (r.right - rootRect.left) / rulerWidth;
+      return Math.min(92, Math.max(8, raw * 100));
+    });
+
+    // Build smooth mechanical schedule (headline -> icon pop -> carriage pause -> bio)
+    const schedule = [];
+    let t = 180;
+    nodes.forEach((n) => {
+      const kind = n.getAttribute("data-tw");
+      const inTitle = !!n.closest(".ca-hero-title");
+      schedule.push(t);
+      if (kind === "icon") {
+        t += 160;
+      } else {
+        t += inTitle ? 26 : 15;
+      }
+      const extraPause = Number(n.getAttribute("data-tw-pause") || 0);
+      t += extraPause;
+    });
+
+      let cursor = 0;
+    let startTime = 0;
+
+    const step = (now) => {
+      if (finished) return;
+      if (!startTime) startTime = now;
+      const elapsed = now - startTime;
+
+      while (cursor < nodes.length && schedule[cursor] <= elapsed) {
+        const node = nodes[cursor];
+        node.classList.add("is-typed");
+        if (node.getAttribute("data-tw") === "char") {
+          if (activeCaretNode) activeCaretNode.classList.remove("is-caret");
+          node.classList.add("is-caret");
+          activeCaretNode = node;
+        }
+        if (needle) {
+          needle.style.left = `${ratios[cursor].toFixed(1)}%`;
+        }
+        cursor += 1;
+      }
+
+      if (cursor >= nodes.length) {
+        finishAll();
+        return;
+      }
+
+      rafId = requestAnimationFrame(step);
+    };
+
+    const onScrollFastForward = () => {
+      if (window.scrollY > 45) finishAll();
+    };
+
+    window.addEventListener("scroll", onScrollFastForward, { passive: true });
+    rafId = requestAnimationFrame(step);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScrollFastForward);
+    };
+  }, [heroRevealed, runId]);
+
+  return (
+    <div ref={rootRef} className={`ca-tw-stage ${isDone ? "is-done" : ""}`}>
+      {/* Big Bold Typewriter Headline with Spinning Icons */}
+      <h1 className="ca-hero-title">
+        <span className="ca-hero-title-chunk ca-hero-chunk-left">
+          {renderTypedWords("Turning ideas into", "h1a", 60)}{" "}
+          <span className="ca-inline-icon ca-scroll-icon-left">
+            <span className="ca-tw-icon" data-tw="icon" data-tw-pause="90">
+              <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
+                <circle cx="20" cy="20" r="18" fill="var(--ca-green)" stroke="var(--ca-ink)" strokeWidth="2.2" />
+                <circle cx="20" cy="20" r="11" fill="var(--ca-surface)" />
+                <circle cx="20" cy="20" r="5" fill="var(--ca-green)" />
+                <circle cx="14" cy="9" r="2.2" fill="var(--ca-ink)" />
+              </svg>
+            </span>
+          </span>
+        </span>{" "}
+        <span className="ca-hero-title-chunk ca-hero-chunk-right">
+          {renderTypedWords("powerful digital experiences.", "h1b", 70)}{" "}
+          <span className="ca-inline-icon ca-scroll-icon-right">
+            <span className="ca-tw-icon" data-tw="icon" data-tw-pause="180">
+              <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
+                {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+                  <ellipse
+                    key={angle}
+                    cx="20"
+                    cy="8"
+                    rx="4.5"
+                    ry="7.5"
+                    fill="var(--ca-magenta)"
+                    transform={`rotate(${angle} 20 20)`}
+                  />
+                ))}
+                <circle cx="20" cy="20" r="4" fill="var(--ca-ink)" />
+              </svg>
+            </span>
+          </span>
+        </span>
+      </h1>
+
+      <p className="ca-hero-bio-text">
+        {renderTypedWords("I design and develop", "b1")}{" "}
+        <span className="ca-hero-hl hl-yellow">
+          {renderTypedWords("modern websites", "b2")}
+        </span>
+        {renderTypedWords(",", "b2c")}{" "}
+        <span className="ca-hero-hl hl-mint">
+          {renderTypedWords("mobile applications", "b3")}
+        </span>
+        {renderTypedWords(",", "b3c")}{" "}
+        <span className="ca-hero-hl hl-pink">
+          {renderTypedWords("intuitive user interfaces", "b4")}
+        </span>
+        {renderTypedWords(", and", "b4c")}{" "}
+        <span className="ca-hero-hl hl-purple">
+          {renderTypedWords("distinctive brand identities", "b5")}
+        </span>
+        {renderTypedWords(
+          ". I combine technology, creativity, and problem-solving to transform ideas into meaningful digital\u00A0products.",
+          "b6"
+        )}
+      </p>
+
+      <p className="ca-hand ca-hero-tagline-hand">
+        <span className="ca-tw-tagline-inner">
+          <span className="ca-hero-hl hl-gold">
+            Exploring ideas. Designing experiences. Building what&apos;s next.
+          </span>{" "}
+          ✨
+        </span>
+      </p>
+
+      {/* Minimalist Vintage Typewriter Carriage Scale (20 ··· 50 ··· 80) */}
+      <div className="ca-tw-ruler" aria-label="Typewriter carriage progress">
+        <div className="ca-tw-ruler-track">
+          <span className="ca-tw-scale-num" style={{ left: "14%" }}>20</span>
+          <span className="ca-tw-scale-num is-center" style={{ left: "50%" }}>50</span>
+          <span className="ca-tw-scale-num" style={{ left: "86%" }}>80</span>
+          <span ref={needleRef} className="ca-tw-carriage-needle" style={{ left: "12%" }} aria-hidden="true" />
+        </div>
+        <button
+          type="button"
+          className="ca-tw-retype-btn"
+          onClick={() => setRunId((n) => n + 1)}
+          title="Replay typewriter animation"
+        >
+          {isDone ? "↻ RETYPE" : "● TYPING"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const isDirectNonHome = typeof window !== "undefined" && (
     window.location.pathname.includes("about") ||
@@ -3687,53 +3922,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Big Bold Headline with Spinning Icons */}
-            <h1 className="ca-hero-title ca-pop-in-title ca-delay-2">
-              <span className="ca-hero-title-chunk ca-hero-chunk-left">
-                Turning ideas into{" "}
-                <span className="ca-inline-icon ca-scroll-icon-left">
-                  <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
-                    <circle cx="20" cy="20" r="18" fill="var(--ca-green)" stroke="var(--ca-ink)" strokeWidth="2.2" />
-                    <circle cx="20" cy="20" r="11" fill="var(--ca-surface)" />
-                    <circle cx="20" cy="20" r="5" fill="var(--ca-green)" />
-                    <circle cx="14" cy="9" r="2.2" fill="var(--ca-ink)" />
-                  </svg>
-                </span>
-              </span>{" "}
-              <span className="ca-hero-title-chunk ca-hero-chunk-right">
-                powerful digital experiences.{" "}
-                <span className="ca-inline-icon ca-scroll-icon-right">
-                  <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
-                    {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                      <ellipse
-                        key={angle}
-                        cx="20"
-                        cy="8"
-                        rx="4.5"
-                        ry="7.5"
-                        fill="var(--ca-magenta)"
-                        transform={`rotate(${angle} 20 20)`}
-                      />
-                    ))}
-                    <circle cx="20" cy="20" r="4" fill="var(--ca-ink)" />
-                  </svg>
-                </span>
-              </span>
-            </h1>
-
-            <p className="ca-mono ca-hero-bio-text">
-              I design and develop{" "}
-              <span className="ca-hero-hl hl-yellow">modern websites</span>,{" "}
-              <span className="ca-hero-hl hl-mint">mobile applications</span>,{" "}
-              <span className="ca-hero-hl hl-pink">intuitive user interfaces</span>, and{" "}
-              <span className="ca-hero-hl hl-purple">distinctive brand identities</span>. I combine technology, creativity, and problem-solving to transform ideas into meaningful digital&nbsp;products.
-            </p>
-            <p className="ca-hand ca-hero-tagline-hand">
-              <span className="ca-hero-hl hl-gold">
-                Exploring ideas. Designing experiences. Building what&apos;s next.
-              </span>{" "}
-              ✨
-            </p>
+            <HeroTypewriterBlock heroRevealed={heroRevealed} />
 
             {/* Buttons: Explore What I Do · Let's Connect */}
             <div className="ca-hero-cta-group">

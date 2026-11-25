@@ -681,27 +681,195 @@
   box-shadow: 0 0 0 3px rgba(43, 87, 214, 0.25);
 }
 
-/* Big Hero Headline: locked to exact 2 × 34px = 68px ruled notebook pitch */
+/* Typewriter Stage Wrapper */
+.ca-tw-stage {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ca-tw-word {
+  display: inline;
+  white-space: nowrap;
+}
+
+/* Zero-reflow character strike reveal: ink stamps smoothly into the ruled paper */
+.ca-tw-char {
+  position: relative;
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.08s ease-out, transform 0.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ca-tw-char.is-typed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Crisp mechanical ink caret tracking active keystroke with zero layout shift */
+.ca-tw-char.is-caret::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 14%;
+  width: 2.5px;
+  height: 74%;
+  border-radius: 1px;
+  background-color: var(--ca-orange);
+  animation: ca-tw-blink 0.65s steps(1) infinite;
+}
+
+@keyframes ca-tw-blink {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0.25; }
+}
+
+.ca-tw-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.22s ease-out, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ca-tw-icon.is-typed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.ca-tw-tagline-inner {
+  display: inline-block;
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  transition: opacity 0.35s ease-out, clip-path 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ca-tw-stage.is-done .ca-tw-tagline-inner {
+  opacity: 1;
+  clip-path: inset(0 0% 0 0);
+}
+
+/* Minimalist Brother-inspired Typewriter Carriage Scale (exact 1 × 34px notebook row) */
+.ca-tw-ruler {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  width: min(540px, 100%);
+  height: 34px;
+  margin: 0 auto 4px;
+  font-family: var(--font-typewriter);
+}
+
+.ca-tw-ruler-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 18px;
+  border-bottom: 1.5px solid rgba(25, 21, 16, 0.28);
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      rgba(25, 21, 16, 0.22) 0,
+      rgba(25, 21, 16, 0.22) 1px,
+      transparent 1px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgba(25, 21, 16, 0.45) 0,
+      rgba(25, 21, 16, 0.45) 1px,
+      transparent 1px,
+      transparent 40px
+    );
+  background-size: 100% 5px, 100% 9px;
+  background-position: bottom left, bottom left;
+  background-repeat: no-repeat;
+}
+
+.ca-tw-scale-num {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: rgba(25, 21, 16, 0.48);
+  user-select: none;
+}
+
+.ca-tw-scale-num.is-center {
+  color: rgba(25, 21, 16, 0.78);
+}
+
+.ca-tw-carriage-needle {
+  position: absolute;
+  bottom: -4px;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 7px solid var(--ca-orange);
+  transition: left 120ms linear;
+}
+
+.ca-tw-stage.is-done .ca-tw-carriage-needle {
+  transition: left 550ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ca-tw-retype-btn {
+  flex-shrink: 0;
+  font-family: var(--font-typewriter);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(25, 21, 16, 0.62);
+  background: rgba(253, 253, 251, 0.85);
+  border: 1.5px solid rgba(25, 21, 16, 0.24);
+  border-radius: 3px;
+  padding: 0.18rem 0.55rem;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, transform 0.15s ease;
+}
+
+.ca-tw-retype-btn:hover {
+  color: var(--ca-ink);
+  border-color: var(--ca-ink);
+  background: var(--ca-yellow);
+  transform: translateY(-1px);
+}
+
+/* Big Hero Headline: vintage clean typewriter font locked to exact 2 × 34px = 68px ruled notebook pitch */
 .ca-hero-title {
   margin-top: 0;
   padding-top: 22px;
   margin-bottom: -22px;
   max-width: min(1000px, 100%);
-  font-size: clamp(2.15rem, 3.1vw, 3.05rem);
-  font-weight: 600;
+  font-family: var(--font-typewriter);
+  font-size: clamp(1.72rem, 2.55vw, 2.48rem);
+  font-weight: 700;
   line-height: 68px;
   letter-spacing: -0.025em;
   color: var(--ca-ink);
 }
 
-/* Hero Bio Paragraph: every wrapped line sits cleanly ON TOP of consecutive 34px notebook lines */
+/* Hero Bio Paragraph: clean Courier Prime typewriter ink sitting ON TOP of consecutive 34px notebook lines */
 .ca-hero-bio-text {
-  max-width: min(760px, 100%);
+  max-width: min(780px, 100%);
   margin: 0 auto -10px;
   padding-top: 10px;
-  font-size: 0.95rem;
+  font-family: var(--font-typewriter);
+  font-size: 0.98rem;
+  font-weight: 400;
   line-height: 34px;
-  color: rgba(25, 21, 16, 0.85);
+  color: rgba(25, 21, 16, 0.9);
   text-wrap: balance;
 }
 
@@ -711,7 +879,7 @@
   line-height: 34px;
   color: var(--ca-ink);
   padding-top: 6px;
-  margin: 0 auto 14px;
+  margin: 0 auto 2px;
   text-wrap: balance;
 }
 
@@ -788,6 +956,14 @@
 @media (prefers-reduced-motion: reduce) {
   .ca-hero-hl {
     background-size: 100% 44%;
+  }
+  .ca-tw-char,
+  .ca-tw-icon,
+  .ca-tw-tagline-inner {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    transition: none !important;
   }
 }
 
@@ -7150,7 +7326,7 @@
     margin-top: 0;
     padding-top: 10px;
     margin-bottom: -10px;
-    font-size: clamp(1.65rem, 6.2vw, 1.95rem);
+    font-size: clamp(1.2rem, 4.85vw, 1.52rem);
     line-height: 34px; /* exact 1 × 34px notebook row on mobile */
   }
 
@@ -7162,10 +7338,16 @@
   }
 
   .ca-hero-tagline-hand {
-    font-size: 1.4rem;
+    font-size: 1.38rem;
     line-height: 34px;
     padding-top: 7px;
-    margin: 0 auto 12px;
+    margin: 0 auto 2px;
+  }
+
+  .ca-tw-ruler {
+    width: 100%;
+    gap: 0.55rem;
+    margin: 0 auto 2px;
   }
 
   .ca-hero-cta {
