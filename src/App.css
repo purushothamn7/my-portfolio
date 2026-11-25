@@ -7474,7 +7474,7 @@
   .ca-hero-title {
     margin: 0 0 8px;
     padding-top: 0;
-    font-size: clamp(1.16rem, 4.7vw, 1.48rem);
+    font-size: clamp(1.02rem, 4.15vw, 1.38rem);
     line-height: 1.42;
   }
 
