@@ -681,12 +681,65 @@
   box-shadow: 0 0 0 3px rgba(43, 87, 214, 0.25);
 }
 
-/* Typewriter Stage Wrapper */
+/* ========================================================= */
+/* 3D VINTAGE TYPEWRITER PAPER-FEED FLOW STAGE               */
+/* ========================================================= */
 .ca-tw-stage {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: 6px;
+  perspective: 1150px;
+  perspective-origin: 50% 72%;
+}
+
+.ca-tw-3d-shell {
+  width: min(920px, 100%);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.ca-tw-tilt-layer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tw-rx, 0deg)) rotateY(var(--tw-ry, 0deg));
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Paper slot clips strictly at the platen lip (bottom: 0) while leaving top/sides open for 3D shadow & motion */
+.ca-tw-paper-slot {
+  width: min(860px, 100%);
+  padding: 6px 8px 0;
+  clip-path: inset(-36px -90px 0px -90px);
+  perspective: 1000px;
+}
+
+/* Crisp warm cotton-white typewriter sheet rolling smoothly UPWARD in 3D out of the platen */
+.ca-tw-paper-3d {
+  width: 100%;
+  padding: 18px clamp(16px, 3vw, 40px) 16px;
+  border-radius: 5px 5px 0 0;
+  border: 1px solid rgba(25, 21, 16, 0.14);
+  border-bottom: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(253, 252, 248, 0.98) 78%, rgba(235, 229, 217, 0.96) 100%);
+  box-shadow:
+    0 -2px 18px rgba(25, 21, 16, 0.05),
+    0 14px 30px -10px rgba(25, 21, 16, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -14px 18px -12px rgba(25, 21, 16, 0.18);
+  transform-origin: 50% 100%;
+  transform: translate3d(0, var(--paper-y, 0px), 0) rotateX(var(--paper-rx, 0deg));
+  transition: transform 0.56s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-style: preserve-3d;
 }
 
 .ca-tw-word {
@@ -694,18 +747,19 @@
   white-space: nowrap;
 }
 
-/* Zero-reflow character strike reveal: ink stamps smoothly into the ruled paper */
+/* 3D mechanical key-hammer ink strike reveal (zero layout reflow) */
 .ca-tw-char {
   position: relative;
   display: inline-block;
   opacity: 0;
-  transform: translateY(-2px);
-  transition: opacity 0.08s ease-out, transform 0.1s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: 50% 100%;
+  transform: translate3d(0, -5px, 16px) rotateX(-58deg) scale(1.12);
+  transition: opacity 0.09s ease-out, transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .ca-tw-char.is-typed {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0) rotateX(0deg) scale(1);
 }
 
 /* Crisp mechanical ink caret tracking active keystroke with zero layout shift */
@@ -713,11 +767,12 @@
   content: "";
   position: absolute;
   right: -2px;
-  top: 14%;
+  top: 12%;
   width: 2.5px;
-  height: 74%;
+  height: 76%;
   border-radius: 1px;
   background-color: var(--ca-orange);
+  box-shadow: 0 0 6px rgba(255, 106, 53, 0.45);
   animation: ca-tw-blink 0.65s steps(1) infinite;
 }
 
@@ -733,13 +788,13 @@
   width: 100%;
   height: 100%;
   opacity: 0;
-  transform: scale(0.5);
-  transition: opacity 0.22s ease-out, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: scale(0.45) rotateY(-40deg);
+  transition: opacity 0.24s ease-out, transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .ca-tw-icon.is-typed {
   opacity: 1;
-  transform: scale(1);
+  transform: scale(1) rotateY(0deg);
 }
 
 .ca-tw-tagline-inner {
@@ -754,35 +809,86 @@
   clip-path: inset(0 0% 0 0);
 }
 
-/* Minimalist Brother-inspired Typewriter Carriage Scale (exact 1 × 34px notebook row) */
-.ca-tw-ruler {
+/* 3D Cylindrical Platen Roller + Brushed-Bronze Brother-inspired Carriage Assembly */
+.ca-tw-platen-assembly {
+  position: relative;
+  z-index: 4;
+  width: min(910px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ca-tw-roller {
+  width: 100%;
+  height: 14px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.85rem;
-  width: min(540px, 100%);
-  height: 34px;
-  margin: 0 auto 4px;
+  position: relative;
+  filter: drop-shadow(0 6px 10px rgba(25, 21, 16, 0.22));
+}
+
+.ca-tw-roller-knob {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #5c554c 0%, #24201b 45%, #3d3730 75%, #181512 100%);
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.ca-tw-roller-bar {
+  flex: 1 1 auto;
+  height: 12px;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.06) 0,
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(180deg, #4b453d 0%, #1d1a16 42%, #342f29 74%, #14110e 100%);
+  background-position: 0 var(--roller-pos, 0px), 0 0;
+  transition: background-position 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+.ca-tw-brass-rail {
+  width: calc(100% - 28px);
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 5px 12px 6px;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(180deg, #e5d5b3 0%, #cbb385 52%, #b09463 100%);
+  border: 1.5px solid #59472c;
+  border-top: 1px solid #f6ead0;
+  box-shadow:
+    0 8px 18px -6px rgba(25, 21, 16, 0.28),
+    inset 0 1px 0 rgba(255, 251, 238, 0.7);
   font-family: var(--font-typewriter);
 }
 
 .ca-tw-ruler-track {
   position: relative;
   flex: 1 1 auto;
-  height: 18px;
-  border-bottom: 1.5px solid rgba(25, 21, 16, 0.28);
+  height: 20px;
+  border-bottom: 1.5px solid rgba(35, 26, 14, 0.45);
   background-image:
     repeating-linear-gradient(
       to right,
-      rgba(25, 21, 16, 0.22) 0,
-      rgba(25, 21, 16, 0.22) 1px,
+      rgba(35, 26, 14, 0.28) 0,
+      rgba(35, 26, 14, 0.28) 1px,
       transparent 1px,
       transparent 8px
     ),
     repeating-linear-gradient(
       to right,
-      rgba(25, 21, 16, 0.45) 0,
-      rgba(25, 21, 16, 0.45) 1px,
+      rgba(35, 26, 14, 0.6) 0,
+      rgba(35, 26, 14, 0.6) 1px,
       transparent 1px,
       transparent 40px
     );
@@ -798,88 +904,110 @@
   font-size: 0.66rem;
   font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.04em;
-  color: rgba(25, 21, 16, 0.48);
+  letter-spacing: 0.05em;
+  color: rgba(35, 26, 14, 0.72);
   user-select: none;
 }
 
-.ca-tw-scale-num.is-center {
-  color: rgba(25, 21, 16, 0.78);
-}
-
-.ca-tw-carriage-needle {
+.ca-tw-scale-center-badge {
   position: absolute;
-  bottom: -4px;
-  width: 0;
-  height: 0;
+  top: -2px;
   transform: translateX(-50%);
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-bottom: 7px solid var(--ca-orange);
-  transition: left 120ms linear;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: #231d16;
+  color: #f4e2bc;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  user-select: none;
 }
 
-.ca-tw-stage.is-done .ca-tw-carriage-needle {
-  transition: left 550ms cubic-bezier(0.22, 1, 0.36, 1);
+/* Live 3D typebar guide fork gliding along the brass scale */
+.ca-tw-carriage-fork {
+  position: absolute;
+  top: -15px;
+  width: 22px;
+  height: 20px;
+  transform: translateX(-50%);
+  color: #2b2218;
+  filter: drop-shadow(0 2px 2px rgba(25, 21, 16, 0.25));
+  transition: left 115ms linear, transform 75ms ease-out;
+  pointer-events: none;
+}
+
+.ca-tw-carriage-fork svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ca-tw-carriage-fork.is-striking {
+  transform: translateX(-50%) translateY(-3px) scaleY(1.12);
+}
+
+.ca-tw-stage.is-done .ca-tw-carriage-fork {
+  transition: left 560ms cubic-bezier(0.22, 1, 0.36, 1), transform 140ms ease-out;
 }
 
 .ca-tw-retype-btn {
   flex-shrink: 0;
   font-family: var(--font-typewriter);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(25, 21, 16, 0.62);
-  background: rgba(253, 253, 251, 0.85);
-  border: 1.5px solid rgba(25, 21, 16, 0.24);
+  color: #fdf9ef;
+  background: #231d16;
+  border: 1.5px solid #231d16;
   border-radius: 3px;
-  padding: 0.18rem 0.55rem;
+  padding: 0.22rem 0.6rem;
   cursor: pointer;
-  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, transform 0.15s ease;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
 }
 
 .ca-tw-retype-btn:hover {
-  color: var(--ca-ink);
-  border-color: var(--ca-ink);
-  background: var(--ca-yellow);
+  background: var(--ca-orange);
+  border-color: #231d16;
+  color: #ffffff;
   transform: translateY(-1px);
 }
 
-/* Big Hero Headline: vintage clean typewriter font locked to exact 2 × 34px = 68px ruled notebook pitch */
+/* Big Hero Headline inside the 3D cotton paper sheet */
 .ca-hero-title {
-  margin-top: 0;
-  padding-top: 22px;
-  margin-bottom: -22px;
-  max-width: min(1000px, 100%);
+  margin: 0 0 10px;
+  padding-top: 0;
+  max-width: min(820px, 100%);
   font-family: var(--font-typewriter);
-  font-size: clamp(1.72rem, 2.55vw, 2.48rem);
+  font-size: clamp(1.62rem, 2.35vw, 2.28rem);
   font-weight: 700;
-  line-height: 68px;
+  line-height: 1.38;
   letter-spacing: -0.025em;
   color: var(--ca-ink);
 }
 
-/* Hero Bio Paragraph: clean Courier Prime typewriter ink sitting ON TOP of consecutive 34px notebook lines */
+/* Hero Bio Paragraph: crisp Courier Prime typewriter ink on the 3D sheet */
 .ca-hero-bio-text {
-  max-width: min(780px, 100%);
-  margin: 0 auto -10px;
-  padding-top: 10px;
+  max-width: min(740px, 100%);
+  margin: 0 auto 10px;
+  padding-top: 0;
   font-family: var(--font-typewriter);
-  font-size: 0.98rem;
+  font-size: 0.96rem;
   font-weight: 400;
-  line-height: 34px;
+  line-height: 1.82;
   color: rgba(25, 21, 16, 0.9);
   text-wrap: balance;
 }
 
-/* Handwritten Tagline: rests cleanly ON TOP of its 34px notebook line */
+/* Handwritten Tagline sign-off at the base of the typed sheet */
 .ca-hero-tagline-hand {
-  font-size: 1.6rem;
-  line-height: 34px;
+  font-size: 1.55rem;
+  line-height: 1.45;
   color: var(--ca-ink);
-  padding-top: 6px;
-  margin: 0 auto 2px;
+  padding-top: 0;
+  margin: 0 auto;
   text-wrap: balance;
 }
 
@@ -957,6 +1085,8 @@
   .ca-hero-hl {
     background-size: 100% 44%;
   }
+  .ca-tw-paper-3d,
+  .ca-tw-tilt-layer,
   .ca-tw-char,
   .ca-tw-icon,
   .ca-tw-tagline-inner {
@@ -7322,32 +7452,44 @@
     flex-shrink: 0;
   }
 
+  .ca-tw-paper-slot {
+    padding: 4px 2px 0;
+  }
+
+  .ca-tw-paper-3d {
+    padding: 14px 12px 14px;
+  }
+
+  .ca-tw-brass-rail {
+    width: calc(100% - 14px);
+    padding: 4px 8px 5px;
+    gap: 0.45rem;
+  }
+
+  .ca-tw-roller-knob {
+    width: 10px;
+    height: 14px;
+  }
+
   .ca-hero-title {
-    margin-top: 0;
-    padding-top: 10px;
-    margin-bottom: -10px;
-    font-size: clamp(1.2rem, 4.85vw, 1.52rem);
-    line-height: 34px; /* exact 1 × 34px notebook row on mobile */
+    margin: 0 0 8px;
+    padding-top: 0;
+    font-size: clamp(1.16rem, 4.7vw, 1.48rem);
+    line-height: 1.42;
   }
 
   .ca-hero-bio-text {
-    font-size: 0.86rem;
-    line-height: 34px;
-    padding-top: 10px;
-    margin: 0 auto -10px;
+    font-size: 0.84rem;
+    line-height: 1.72;
+    padding-top: 0;
+    margin: 0 auto 8px;
   }
 
   .ca-hero-tagline-hand {
-    font-size: 1.38rem;
-    line-height: 34px;
-    padding-top: 7px;
-    margin: 0 auto 2px;
-  }
-
-  .ca-tw-ruler {
-    width: 100%;
-    gap: 0.55rem;
-    margin: 0 auto 2px;
+    font-size: 1.32rem;
+    line-height: 1.45;
+    padding-top: 0;
+    margin: 0 auto;
   }
 
   .ca-hero-cta {
