@@ -2705,6 +2705,7 @@ export default function App() {
   });
 
   const featuredRef = useRef(null);
+  const aboutSectionRef = useRef(null);
   const deckContainerRef = useRef(null);
   const scrollTriggerRef = useRef(null);
   const [featuredInView, setFeaturedInView] = useState(false);
@@ -2766,6 +2767,105 @@ export default function App() {
       clearTimeout(refreshTimer);
       ctx.revert();
       scrollTriggerRef.current = null;
+    };
+  }, [currentPage]);
+
+  // Scroll-driven out-to-in glide for About flanking Polaroids (desktop & mobile)
+  useEffect(() => {
+    if (currentPage !== "home" || !aboutSectionRef.current) return;
+
+    const aboutEl = aboutSectionRef.current;
+    const mm = gsap.matchMedia();
+
+    mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
+      const leftCard = aboutEl.querySelector(".ca-flank-polaroid.left");
+      const rightCard = aboutEl.querySelector(".ca-flank-polaroid.right");
+
+      if (leftCard) {
+        gsap.fromTo(
+          leftCard,
+          { x: -240, y: 40, rotation: -16, opacity: 0 },
+          {
+            x: 0,
+            y: 0,
+            rotation: 0,
+            opacity: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: aboutEl,
+              start: "top 92%",
+              end: "center 58%",
+              scrub: 0.7,
+            },
+          }
+        );
+      }
+
+      if (rightCard) {
+        gsap.fromTo(
+          rightCard,
+          { x: 240, y: 40, rotation: 16, opacity: 0 },
+          {
+            x: 0,
+            y: 0,
+            rotation: 0,
+            opacity: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: aboutEl,
+              start: "top 95%",
+              end: "top 22%",
+              scrub: 0.7,
+            },
+          }
+        );
+      }
+    });
+
+    mm.add("(max-width: 1023px) and (prefers-reduced-motion: no-preference)", () => {
+      const mobileWrap = aboutEl.querySelector(".ca-about-polaroids-mobile");
+      const cards = aboutEl.querySelectorAll(".ca-about-polaroids-mobile .ca-polaroid");
+      if (!mobileWrap || cards.length < 2) return;
+
+      gsap.fromTo(
+        cards[0],
+        { x: -110, rotation: -12, opacity: 0 },
+        {
+          x: 0,
+          rotation: -3.5,
+          opacity: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: mobileWrap,
+            start: "top 95%",
+            end: "top 55%",
+            scrub: 0.65,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        cards[1],
+        { x: 110, rotation: 12, opacity: 0 },
+        {
+          x: 0,
+          rotation: 3.5,
+          opacity: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: mobileWrap,
+            start: "top 95%",
+            end: "top 55%",
+            scrub: 0.65,
+          },
+        }
+      );
+    });
+
+    const refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 160);
+    return () => {
+      clearTimeout(refreshTimer);
+      mm.revert();
     };
   }, [currentPage]);
 
@@ -3352,10 +3452,10 @@ export default function App() {
               </span>
             </h1>
 
-            <p className="ca-mono" style={{ maxWidth: "680px", margin: "0.5rem auto 0.25rem", fontSize: "0.95rem", lineHeight: 1.55, color: "rgba(25, 21, 16, 0.85)" }}>
+            <p className="ca-mono ca-hero-bio-text">
               I design and develop modern websites, mobile applications, intuitive user interfaces, and distinctive brand identities. I combine technology, creativity, and problem-solving to transform ideas into meaningful digital products.
             </p>
-            <p className="ca-hand" style={{ fontSize: "1.6rem", color: "var(--ca-ink)", margin: "0.2rem auto 0.85rem" }}>
+            <p className="ca-hand ca-hero-tagline-hand">
               Exploring ideas. Designing experiences. Building what&apos;s next. ✨
             </p>
 
@@ -3390,7 +3490,7 @@ export default function App() {
           {/* ========================================================= */}
           {/* 4. ABOUT SECTION (01. ABOUT ME) */}
           {/* ========================================================= */}
-          <section id="about" className="ca-about-section ca-grid">
+          <section id="about" ref={aboutSectionRef} className="ca-about-section ca-grid">
             {/* Hand-drawn divider */}
             <svg viewBox="0 0 1440 130" fill="none" preserveAspectRatio="none" className="ca-section-divider-svg" aria-hidden="true">
               <path d="M-10 120 C 420 10, 1030 4, 1450 80" stroke="var(--ca-tick)" strokeWidth="1.5" />
