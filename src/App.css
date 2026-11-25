@@ -262,7 +262,7 @@
   font-size: 1.8rem;
   line-height: 1;
   color: var(--ca-ink);
-  margin-bottom: 2px;
+  margin-bottom: 5px;
 }
 
 @media (min-width: 640px) {
@@ -281,7 +281,7 @@
 
 .ca-hero-label-box .ca-wavy-line {
   position: absolute;
-  bottom: -6px;
+  bottom: -4px;
   left: 50%;
   transform: translateX(-50%);
   margin-top: 0;
@@ -301,7 +301,7 @@
 .ca-name-stage {
   position: relative;
   margin-top: 0;
-  height: 102px; /* 3 × 34px on tablet/mobile */
+  height: 136px; /* 4 × 34px on tablet */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -309,7 +309,7 @@
 
 @media (min-width: 1024px) {
   .ca-name-stage {
-    height: 136px; /* 4 × 34px on desktop */
+    height: 170px; /* 5 × 34px on desktop: generous air under "my name is" & above status pill */
   }
 }
 
@@ -363,7 +363,7 @@
 }
 
 .ca-name-text {
-  font-size: clamp(2.35rem, 7.8vw, 8.5rem);
+  font-size: clamp(2.35rem, 7vw, 7.4rem);
   line-height: 0.92;
   letter-spacing: -0.01em;
   color: var(--ca-ink);
@@ -454,14 +454,8 @@
   .ca-desktop-annotations {
     display: block;
     position: absolute;
-    inset: -0.75rem -6.5rem 0.5rem;
+    inset: 0;
     pointer-events: none;
-  }
-}
-
-@media (min-width: 1280px) {
-  .ca-desktop-annotations {
-    inset: -0.75rem -7.5rem 0.5rem;
   }
 }
 
@@ -471,15 +465,15 @@
   opacity: 1;
 }
 
+/* Anchor every annotation from its INNER edge facing the orange box so left & right stay mirrored at every width */
 .ca-annotation-item.top-left {
-  top: 0;
-  left: 0;
-  transform: translate(-50%, -50%);
+  top: -10px;
+  right: calc(100% + 10px);
 }
 
 .ca-note-rotate-tl {
   display: inline-block;
-  transform: rotate(-14.4deg);
+  transform: rotate(-11deg);
   transition: transform 0.2s ease;
 }
 
@@ -490,23 +484,22 @@
 @keyframes ca-drop-pill-left {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) translateY(-28px);
+    transform: translateY(-24px);
   }
   100% {
     opacity: 1;
-    transform: translate(-50%, -50%) translateY(0);
+    transform: translateY(0);
   }
 }
 
 .ca-annotation-item.top-right {
-  top: 0;
-  right: 0;
-  transform: translate(50%, -50%);
+  top: -10px;
+  left: calc(100% + 10px);
 }
 
 .ca-note-rotate-tr {
   display: inline-block;
-  transform: rotate(12.6deg);
+  transform: rotate(11deg);
   transition: transform 0.2s ease;
 }
 
@@ -517,23 +510,22 @@
 @keyframes ca-drop-pill-right {
   0% {
     opacity: 0;
-    transform: translate(50%, -50%) translateY(-28px);
+    transform: translateY(-24px);
   }
   100% {
     opacity: 1;
-    transform: translate(50%, -50%) translateY(0);
+    transform: translateY(0);
   }
 }
 
 .ca-annotation-item.bottom-left {
   bottom: 0;
-  left: 0;
-  transform: translate(-50%, 50%);
+  right: calc(100% + 32px);
 }
 
 .ca-note-rotate-bl {
   display: inline-block;
-  transform: rotate(-7.2deg);
+  transform: rotate(-5.5deg);
   transition: transform 0.2s ease;
 }
 
@@ -544,27 +536,26 @@
 @keyframes ca-drop-note-left {
   0% {
     opacity: 0;
-    transform: translate(-50%, 50%) translateY(-100px);
+    transform: translateY(-72px);
   }
   70% {
     opacity: 1;
-    transform: translate(-50%, 50%) translateY(6px);
+    transform: translateY(5px);
   }
   100% {
     opacity: 1;
-    transform: translate(-50%, 50%) translateY(0);
+    transform: translateY(0);
   }
 }
 
 .ca-annotation-item.bottom-right {
   bottom: 0;
-  right: 0;
-  transform: translate(50%, 50%);
+  left: calc(100% + 32px);
 }
 
 .ca-note-rotate-br {
   display: inline-block;
-  transform: rotate(3.6deg);
+  transform: rotate(5.5deg);
   transition: transform 0.2s ease;
 }
 
@@ -575,15 +566,30 @@
 @keyframes ca-drop-note-right {
   0% {
     opacity: 0;
-    transform: translate(50%, 50%) translateY(-100px);
+    transform: translateY(-72px);
   }
   70% {
     opacity: 1;
-    transform: translate(50%, 50%) translateY(6px);
+    transform: translateY(5px);
   }
   100% {
     opacity: 1;
-    transform: translate(50%, 50%) translateY(0);
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 1280px) {
+  .ca-annotation-item.top-left {
+    right: calc(100% + 20px);
+  }
+  .ca-annotation-item.top-right {
+    left: calc(100% + 20px);
+  }
+  .ca-annotation-item.bottom-left {
+    right: calc(100% + 38px);
+  }
+  .ca-annotation-item.bottom-right {
+    left: calc(100% + 38px);
   }
 }
 
@@ -597,7 +603,7 @@
   position: relative;
   display: inline-block;
   padding: 0.45rem 1.15rem;
-  font-size: 1.6rem;
+  font-size: 1.55rem;
   line-height: 1.1;
   color: var(--ca-ink);
   box-shadow: 2px 4px 12px rgba(17, 18, 18, 0.16);
@@ -605,12 +611,17 @@
   white-space: nowrap;
 }
 
+.ca-desktop-annotations .ca-sticky-note {
+  min-width: 10.5rem;
+  text-align: center;
+}
+
 .ca-sticky-arrow-bl {
   position: absolute;
-  top: -1rem;
-  right: -1.75rem;
-  width: 2rem;
-  height: 2rem;
+  top: -1.45rem;
+  right: -1.55rem;
+  width: 1.85rem;
+  height: 1.85rem;
   transform: scaleX(-1);
   color: var(--ca-ink);
   pointer-events: none;
@@ -618,10 +629,10 @@
 
 .ca-sticky-arrow-br {
   position: absolute;
-  top: -1.5rem;
-  left: -1.5rem;
-  width: 2rem;
-  height: 2rem;
+  top: -1.45rem;
+  left: -1.55rem;
+  width: 1.85rem;
+  height: 1.85rem;
   color: var(--ca-ink);
   pointer-events: none;
 }
@@ -7085,7 +7096,7 @@
 
   .ca-name-stage {
     margin-top: 0;
-    height: 68px; /* 2 × 34px */
+    height: 102px; /* 3 × 34px: clean breathing room under "my name is" on mobile */
     max-width: 100%;
   }
 
