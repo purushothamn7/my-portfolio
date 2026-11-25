@@ -150,7 +150,7 @@
   /* 51px header + 51px padding-top = 102px (exact 3 × 34px notebook grid start) */
   padding: 51px clamp(20px, 4vw, 64px) 2.25rem;
   text-align: center;
-  overflow: visible;
+  overflow-x: clip;
   box-sizing: border-box;
 }
 
@@ -685,12 +685,13 @@
 
 /* Hero Bio Paragraph: every wrapped line sits cleanly ON TOP of consecutive 34px notebook lines */
 .ca-hero-bio-text {
-  max-width: min(920px, 100%);
+  max-width: min(760px, 100%);
   margin: 0 auto -10px;
   padding-top: 10px;
   font-size: 0.95rem;
   line-height: 34px;
   color: rgba(25, 21, 16, 0.85);
+  text-wrap: balance;
 }
 
 /* Handwritten Tagline: rests cleanly ON TOP of its 34px notebook line */
@@ -700,11 +701,17 @@
   color: var(--ca-ink);
   padding-top: 6px;
   margin: 0 auto 14px;
+  text-wrap: balance;
 }
 
 .ca-hero-title-chunk {
   display: inline-block;
   white-space: nowrap;
+}
+
+.ca-hero-chunk-left,
+.ca-hero-chunk-right {
+  will-change: transform, opacity;
 }
 
 @media (max-width: 640px) {
@@ -714,11 +721,63 @@
 }
 
 .ca-inline-icon {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
   vertical-align: -0.1em;
   width: 0.85em;
   height: 0.85em;
   margin: 0 0.15em;
+  transform-origin: center center;
+}
+
+.ca-inline-icon svg {
+  display: block;
+}
+
+.ca-scroll-icon-left,
+.ca-scroll-icon-right {
+  will-change: transform;
+}
+
+/* Scroll-scrubbed pastel highlighter sweep on Hero bio & tagline (zero vertical shift on 34px grid) */
+.ca-hero-hl {
+  background-repeat: no-repeat;
+  background-position: 0 84%;
+  background-size: 0% 44%;
+  border-radius: 3px;
+  padding: 0 2px;
+  margin: 0 -2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.ca-hero-hl.hl-yellow {
+  background-image: linear-gradient(rgba(254, 211, 77, 0.72), rgba(254, 211, 77, 0.72));
+}
+
+.ca-hero-hl.hl-mint {
+  background-image: linear-gradient(rgba(134, 239, 172, 0.62), rgba(134, 239, 172, 0.62));
+}
+
+.ca-hero-hl.hl-pink {
+  background-image: linear-gradient(rgba(244, 114, 182, 0.44), rgba(244, 114, 182, 0.44));
+}
+
+.ca-hero-hl.hl-purple {
+  background-image: linear-gradient(rgba(196, 181, 253, 0.68), rgba(196, 181, 253, 0.68));
+}
+
+.ca-hero-hl.hl-gold {
+  background-image: linear-gradient(rgba(254, 211, 77, 0.48), rgba(254, 211, 77, 0.48));
+  background-position: 0 88%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ca-hero-hl {
+    background-size: 100% 44%;
+  }
 }
 
 /* Primary CTA Button */

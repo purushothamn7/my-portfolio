@@ -2869,9 +2869,100 @@ export default function App() {
     };
   }, [currentPage]);
 
-  // Smooth scroll-triggered card reveals from "02 · WHAT I DO" down the full page (+ inner page cards)
+  // Smooth scroll-triggered animations: Hero typography choreography + card reveals from "02 · WHAT I DO" down the full page (+ inner page cards)
   useEffect(() => {
     const mm = gsap.matchMedia();
+
+    // Hero typography scroll choreography: kinetic split headline + scroll-coupled icons + pastel highlighter sweep + soft exit
+    mm.add(
+      {
+        isDesktop: "(min-width: 1024px)",
+        isMobile: "(max-width: 1023px)",
+        reduceMotion: "(prefers-reduced-motion: reduce)",
+      },
+      (context) => {
+        const { isDesktop, reduceMotion } = context.conditions;
+        if (reduceMotion) return;
+
+        const homeEl = document.getElementById("home");
+        if (!homeEl) return;
+
+        const leftChunk = homeEl.querySelector(".ca-hero-chunk-left");
+        const rightChunk = homeEl.querySelector(".ca-hero-chunk-right");
+        const leftIcon = homeEl.querySelector(".ca-scroll-icon-left");
+        const rightIcon = homeEl.querySelector(".ca-scroll-icon-right");
+        const hlSpans = homeEl.querySelectorAll(".ca-hero-hl");
+        const bioEl = homeEl.querySelector(".ca-hero-bio-text");
+        const taglineEl = homeEl.querySelector(".ca-hero-tagline-hand");
+
+        const startAtRest = () => `top ${Math.round(homeEl.offsetTop)}px`;
+        const splitDist = isDesktop ? 115 : 26;
+
+        // 1. Opposite-direction kinetic headline split + scroll-coupled icon spin
+        const kineticTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: homeEl,
+            start: startAtRest,
+            end: "bottom 15%",
+            scrub: 0.65,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        if (leftChunk) {
+          kineticTl.fromTo(leftChunk, { x: 0 }, { x: -splitDist, ease: "none" }, 0);
+        }
+        if (rightChunk) {
+          kineticTl.fromTo(rightChunk, { x: 0 }, { x: splitDist, ease: "none" }, 0);
+        }
+        if (leftIcon) {
+          kineticTl.fromTo(leftIcon, { rotation: 0, scale: 1 }, { rotation: 260, scale: 1.16, ease: "none" }, 0);
+        }
+        if (rightIcon) {
+          kineticTl.fromTo(rightIcon, { rotation: 0, scale: 1 }, { rotation: -260, scale: 1.18, ease: "none" }, 0);
+        }
+
+        // 2. Pastel highlighter sweep across skill phrases + handwritten tagline
+        if (hlSpans.length) {
+          gsap.fromTo(
+            hlSpans,
+            { backgroundSize: "0% 44%" },
+            {
+              backgroundSize: "100% 44%",
+              stagger: 0.14,
+              ease: "none",
+              scrollTrigger: {
+                trigger: homeEl,
+                start: startAtRest,
+                end: () => `+=${isDesktop ? 320 : 250}`,
+                scrub: 0.45,
+                invalidateOnRefresh: true,
+              },
+            }
+          );
+        }
+
+        // 3. Gentle depth fade-out once highlights finish and hero exits into #about
+        const fadeTargets = [leftChunk, rightChunk, bioEl, taglineEl].filter(Boolean);
+        if (fadeTargets.length) {
+          gsap.fromTo(
+            fadeTargets,
+            { opacity: 1 },
+            {
+              opacity: 0.25,
+              ease: "none",
+              scrollTrigger: {
+                trigger: homeEl,
+                start: "35% top",
+                end: "bottom 12%",
+                scrub: 0.6,
+                invalidateOnRefresh: true,
+              },
+            }
+          );
+        }
+      }
+    );
 
     mm.add("(prefers-reduced-motion: no-preference)", () => {
       // Home 02 · WHAT I DO: staggered 4-card rise with subtle scrapbook tilt + CTA button
@@ -3598,9 +3689,9 @@ export default function App() {
 
             {/* Big Bold Headline with Spinning Icons */}
             <h1 className="ca-hero-title ca-pop-in-title ca-delay-2">
-              <span className="ca-hero-title-chunk">
+              <span className="ca-hero-title-chunk ca-hero-chunk-left">
                 Turning ideas into{" "}
-                <span className="ca-inline-icon">
+                <span className="ca-inline-icon ca-scroll-icon-left">
                   <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
                     <circle cx="20" cy="20" r="18" fill="var(--ca-green)" stroke="var(--ca-ink)" strokeWidth="2.2" />
                     <circle cx="20" cy="20" r="11" fill="var(--ca-surface)" />
@@ -3609,9 +3700,9 @@ export default function App() {
                   </svg>
                 </span>
               </span>{" "}
-              <span className="ca-hero-title-chunk">
+              <span className="ca-hero-title-chunk ca-hero-chunk-right">
                 powerful digital experiences.{" "}
-                <span className="ca-inline-icon">
+                <span className="ca-inline-icon ca-scroll-icon-right">
                   <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
                     {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
                       <ellipse
@@ -3631,10 +3722,17 @@ export default function App() {
             </h1>
 
             <p className="ca-mono ca-hero-bio-text">
-              I design and develop modern websites, mobile applications, intuitive user interfaces, and distinctive brand identities. I combine technology, creativity, and problem-solving to transform ideas into meaningful digital products.
+              I design and develop{" "}
+              <span className="ca-hero-hl hl-yellow">modern websites</span>,{" "}
+              <span className="ca-hero-hl hl-mint">mobile applications</span>,{" "}
+              <span className="ca-hero-hl hl-pink">intuitive user interfaces</span>, and{" "}
+              <span className="ca-hero-hl hl-purple">distinctive brand identities</span>. I combine technology, creativity, and problem-solving to transform ideas into meaningful digital&nbsp;products.
             </p>
             <p className="ca-hand ca-hero-tagline-hand">
-              Exploring ideas. Designing experiences. Building what&apos;s next. ✨
+              <span className="ca-hero-hl hl-gold">
+                Exploring ideas. Designing experiences. Building what&apos;s next.
+              </span>{" "}
+              ✨
             </p>
 
             {/* Buttons: Explore What I Do · Let's Connect */}
