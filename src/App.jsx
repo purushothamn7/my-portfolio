@@ -2869,6 +2869,35 @@ export default function App() {
     };
   }, [currentPage]);
 
+  // Snap every [data-grid-snap] text block to exact 34px ruled-paper multiples on any viewport width
+  useEffect(() => {
+    const snap = () => {
+      const nodes = document.querySelectorAll("[data-grid-snap]");
+      nodes.forEach((el) => {
+        el.style.setProperty("--snap-offset", "0px");
+      });
+      nodes.forEach((el) => {
+        const top = Math.round(el.getBoundingClientRect().top + window.scrollY);
+        const rem = ((top % 34) + 34) % 34;
+        const offset = rem === 0 ? 0 : 34 - rem;
+        el.style.setProperty("--snap-offset", `${offset}px`);
+      });
+      ScrollTrigger.refresh();
+    };
+
+    const raf = requestAnimationFrame(snap);
+    const t = setTimeout(snap, 220);
+    window.addEventListener("resize", snap);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(snap);
+    }
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+      window.removeEventListener("resize", snap);
+    };
+  }, [currentPage, heroRevealed]);
+
   const goToProject = (idx) => {
     setActiveDeckTab(idx);
     const st = scrollTriggerRef.current;
@@ -3497,7 +3526,7 @@ export default function App() {
             </svg>
 
             {/* Handwritten about me! label */}
-            <p className="ca-hand ca-about-label">01 · about me!</p>
+            <p className="ca-hand ca-about-label" data-grid-snap="">01 · about me!</p>
 
             {/* Flanking Polaroids on Desktop */}
             <div className="ca-about-flanking-polaroids-desktop" aria-hidden="true">
@@ -3549,20 +3578,20 @@ export default function App() {
                 <span className="ca-about-badge-text">ABOUT ME</span>
               </div>
 
-              <h2 className="ca-display" style={{ fontSize: "clamp(2rem, 4vw, 3rem)", margin: "0.75rem auto", color: "var(--ca-ink)" }}>
+              <h2 className="ca-display ca-about-heading" data-grid-snap="">
                 Building Digital Experiences With Code &amp; Creativity.
               </h2>
 
-              <p className="ca-hand ca-about-bio">
+              <p className="ca-hand ca-about-bio" data-grid-snap="">
                 I&apos;m Purushotham, a developer and creative designer passionate about building modern digital products that combine functionality, performance, and visual quality. ✨
               </p>
 
-              <p style={{ maxWidth: "680px", margin: "0.5rem auto 1rem", fontSize: "1rem", lineHeight: 1.6, color: "rgba(25, 21, 16, 0.85)" }}>
+              <p className="ca-about-paragraph" data-grid-snap="">
                 My work spans full-stack web development, mobile application development, UI/UX design, and brand identity creation. From planning a product to designing its interface and developing its functionality, I enjoy bringing ideas to life through technology. I believe great digital products should not only look impressive but also solve real problems, deliver smooth experiences, and create value for users.
               </p>
 
               {/* My Focus Notepad Card */}
-              <div className="ca-taped-callout yellow-soft rot-neg1" style={{ maxWidth: "600px", margin: "1.25rem auto 1.75rem", textAlign: "left" }}>
+              <div className="ca-taped-callout yellow-soft rot-neg1 ca-about-focus-card">
                 <span className="ca-tape-strip-tl" />
                 <span className="ca-mono" style={{ fontSize: "0.8rem", fontWeight: "800", textTransform: "uppercase", display: "block", marginBottom: "0.5rem" }}>
                   ✦ MY FOCUS:
@@ -3830,20 +3859,20 @@ export default function App() {
           {/* ========================================================= */}
           {/* 02. WHAT I DO (Quick Capabilities Overview) */}
           {/* ========================================================= */}
-          <section id="services" className="ca-section-block ca-grid" style={{ paddingTop: "3rem", paddingBottom: "4rem" }}>
+          <section id="services" className="ca-section-block ca-grid">
             <div className="ca-section-inner-wide">
               <div className="ca-section-header-center">
                 <span className="ca-postage-stamp stamp-yellow rot-neg2">
                   02 · WHAT I DO
                 </span>
-                <h2 className="ca-section-headline">
+                <h2 className="ca-section-headline" data-grid-snap="">
                   Different Skills. One Creative Vision.
                 </h2>
-                <svg viewBox="0 0 64 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="ca-wavy-line" style={{ margin: "0.2rem auto 0.75rem" }} aria-hidden="true">
+                <svg viewBox="0 0 64 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="ca-wavy-line" style={{ margin: "0.2rem auto 0.5rem" }} aria-hidden="true">
                   <path d="M3 4c18-3 40-3 58 0" />
                   <path d="M9 9c14-2.5 32-2.5 46 0" />
                 </svg>
-                <p className="ca-section-lead-desc" style={{ maxWidth: "680px", margin: "0 auto 2rem" }}>
+                <p className="ca-section-lead-desc" data-grid-snap="">
                   I combine full-stack engineering, cross-platform mobile development, and human-centered design to craft complete digital products that solve real problems.
                 </p>
               </div>
@@ -3945,15 +3974,15 @@ export default function App() {
           {/* ========================================================= */}
           {/* 03. LET'S CONNECT (Compact Call-To-Action) */}
           {/* ========================================================= */}
-          <section id="contact" className="ca-contact-section" style={{ paddingTop: "2.5rem", paddingBottom: "3rem" }}>
+          <section id="contact" className="ca-contact-section">
             <div className="ca-contact-inner">
               <span className="ca-postage-stamp stamp-yellow rot-neg1" style={{ margin: "0.5rem auto 0.5rem" }}>
                 03 · LET'S CONNECT
               </span>
 
-              <h2 className="ca-display ca-contact-title">HAVE AN IDEA? LET'S BUILD IT TOGETHER</h2>
+              <h2 className="ca-display ca-contact-title" data-grid-snap="">HAVE AN IDEA? LET'S BUILD IT TOGETHER</h2>
 
-              <p className="ca-hand ca-contact-sub" style={{ maxWidth: "700px" }}>
+              <p className="ca-hand ca-contact-sub" data-grid-snap="">
                 Whether you need a modern website, a mobile application, a better user experience, or a distinctive brand identity, I&apos;m interested in exploring ideas and building useful digital solutions.
               </p>
 
