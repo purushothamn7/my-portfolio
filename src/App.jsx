@@ -2869,6 +2869,155 @@ export default function App() {
     };
   }, [currentPage]);
 
+  // Smooth scroll-triggered card reveals from "02 · WHAT I DO" down the full page (+ inner page cards)
+  useEffect(() => {
+    const mm = gsap.matchMedia();
+
+    mm.add("(prefers-reduced-motion: no-preference)", () => {
+      // Home 02 · WHAT I DO: staggered 4-card rise with subtle scrapbook tilt + CTA button
+      const serviceGrid = document.querySelector("#services .ca-universe-grid");
+      const serviceCards = document.querySelectorAll("#services .ca-universe-card");
+      if (serviceGrid && serviceCards.length) {
+        gsap.fromTo(
+          serviceCards,
+          { y: 54, scale: 0.94, rotation: (i) => (i % 2 === 0 ? -2.2 : 2.2), opacity: 0 },
+          {
+            y: 0,
+            scale: 1,
+            rotation: 0,
+            opacity: 1,
+            duration: 0.72,
+            stagger: 0.11,
+            ease: "power3.out",
+            clearProps: "transform",
+            scrollTrigger: {
+              trigger: serviceGrid,
+              start: "top 86%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        );
+      }
+
+      const servicesCta = document.querySelector("#services .ca-hero-cta");
+      if (servicesCta) {
+        gsap.fromTo(
+          servicesCta,
+          { y: 26, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.6,
+            ease: "power3.out",
+            clearProps: "transform",
+            scrollTrigger: {
+              trigger: servicesCta,
+              start: "top 92%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        );
+      }
+
+      // Home 03 · LET'S CONNECT: staggered 4 connect cards + chunky yellow banner
+      const connectGrid = document.querySelector("#contact .ca-connect-links-grid");
+      const connectCards = document.querySelectorAll("#contact .ca-connect-link-card");
+      if (connectGrid && connectCards.length) {
+        gsap.fromTo(
+          connectCards,
+          { y: 46, scale: 0.94, opacity: 0 },
+          {
+            y: 0,
+            scale: 1,
+            opacity: 1,
+            duration: 0.65,
+            stagger: 0.09,
+            ease: "power3.out",
+            clearProps: "transform",
+            scrollTrigger: {
+              trigger: connectGrid,
+              start: "top 88%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        );
+      }
+
+      const contactBanner = document.querySelector("#contact .ca-contact-banner");
+      if (contactBanner) {
+        gsap.fromTo(
+          contactBanner,
+          { y: 52, scale: 0.96, rotation: -1, opacity: 0 },
+          {
+            y: 0,
+            scale: 1,
+            rotation: 0,
+            opacity: 1,
+            duration: 0.78,
+            ease: "power3.out",
+            clearProps: "transform",
+            scrollTrigger: {
+              trigger: contactBanner,
+              start: "top 88%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        );
+      }
+
+      // Footer columns smooth fade-rise
+      const footerRoot = document.querySelector(".hwf-root");
+      const footerCols = document.querySelectorAll(".hwf-brand, .hwf-col");
+      if (footerRoot && footerCols.length) {
+        gsap.fromTo(
+          footerCols,
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.65,
+            stagger: 0.09,
+            ease: "power3.out",
+            clearProps: "transform",
+            scrollTrigger: {
+              trigger: footerRoot,
+              start: "top 92%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        );
+      }
+
+      // Inner pages (/about, /playground, /contact): smooth batch reveal for content cards
+      const innerCards = document.querySelectorAll(
+        ".ca-about-page-container .ca-story-card, .ca-about-page-container .ca-principle-card, .ca-about-page-container .ca-edu-card, .ca-about-page-container .ca-lang-card, .ca-techtext-stage-card"
+      );
+      if (innerCards.length) {
+        gsap.set(innerCards, { y: 40, opacity: 0, scale: 0.96 });
+        ScrollTrigger.batch(innerCards, {
+          start: "top 88%",
+          once: true,
+          onEnter: (batch) =>
+            gsap.to(batch, {
+              y: 0,
+              opacity: 1,
+              scale: 1,
+              duration: 0.65,
+              stagger: 0.09,
+              ease: "power3.out",
+              clearProps: "transform",
+            }),
+        });
+      }
+    });
+
+    const refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 200);
+    return () => {
+      clearTimeout(refreshTimer);
+      mm.revert();
+    };
+  }, [currentPage]);
+
   // Snap every [data-grid-snap] text block to exact 34px ruled-paper multiples on any viewport width
   useEffect(() => {
     const snap = () => {
