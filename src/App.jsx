@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
@@ -8,6 +9,7 @@ import "./App.css";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+  ScrollTrigger.config({ ignoreMobileResize: true });
 }
 
 // Staggered characters for splash intro
@@ -2592,8 +2594,23 @@ function ServicesView({ navigateTo }) {
   );
 }
 
-// Zero-reflow vintage typewriter block for the Hero headline, bio & Brother-inspired carriage scale
+const DEFAULT_HERO_COPY = {
+  line1: "Turning ideas into",
+  line2: "powerful digital experiences.",
+  bio: "I design and develop modern websites, mobile applications, intuitive user interfaces, and distinctive brand identities. I combine technology, creativity, and problem-solving to transform ideas into meaningful digital\u00A0products.",
+  tagline: "Exploring ideas. Designing experiences. Building what's next.",
+};
+
+const BIO_HIGHLIGHT_MAP = [
+  { phrase: "modern websites", cls: "hl-yellow" },
+  { phrase: "mobile applications", cls: "hl-mint" },
+  { phrase: "intuitive user interfaces", cls: "hl-pink" },
+  { phrase: "distinctive brand identities", cls: "hl-purple" },
+];
+
+// Zero-reflow single-letter mechanical typewriter word renderer
 function renderTypedWords(text, keyPrefix, pauseMs = 0) {
+  if (!text) return null;
   const words = text.split(" ");
   return words.map((word, wIdx) => (
     <React.Fragment key={`${keyPrefix}-w-${wIdx}`}>
@@ -2607,9 +2624,9 @@ function renderTypedWords(text, keyPrefix, pauseMs = 0) {
               cIdx === word.length - 1 && wIdx === words.length - 1 && pauseMs
                 ? pauseMs
                 : ch === "."
-                  ? 145
+                  ? 180
                   : ch === ","
-                    ? 75
+                    ? 95
                     : 0
             }
           >
@@ -2622,38 +2639,538 @@ function renderTypedWords(text, keyPrefix, pauseMs = 0) {
   ));
 }
 
-function HeroTypewriterBlock({ heroRevealed }) {
+function renderBioWithHighlights(bioText) {
+  const parts = [];
+  let remaining = bioText;
+  let idx = 0;
+
+  while (remaining.length > 0) {
+    let earliest = null;
+    for (const item of BIO_HIGHLIGHT_MAP) {
+      const pos = remaining.indexOf(item.phrase);
+      if (pos !== -1 && (!earliest || pos < earliest.pos)) {
+        earliest = { pos, item };
+      }
+    }
+    if (!earliest) {
+      parts.push(
+        <React.Fragment key={`bp-${idx++}`}>
+          {renderTypedWords(remaining, `b-tail-${idx}`)}
+        </React.Fragment>
+      );
+      break;
+    }
+    if (earliest.pos > 0) {
+      const before = remaining.slice(0, earliest.pos);
+      parts.push(
+        <React.Fragment key={`bp-${idx++}`}>
+          {renderTypedWords(before, `b-pre-${idx}`)}
+        </React.Fragment>
+      );
+    }
+    parts.push(
+      <span key={`bp-${idx++}`} className={`ca-hero-hl ${earliest.item.cls}`}>
+        {renderTypedWords(earliest.item.phrase, `b-hl-${idx}`)}
+      </span>
+    );
+    remaining = remaining.slice(earliest.pos + earliest.item.phrase.length);
+  }
+  return parts;
+}
+
+const CAPSULE_MODELS = [
+  { id: "classic", label: "Classic" },
+  { id: "voxel", label: "Voxel" },
+  { id: "volcanic", label: "Volcanic rock" },
+  { id: "seaglass", label: "Sea glass" },
+];
+
+const CAPSULE_COLORS = [
+  { id: "original", label: "Original", hex: "#eeeadf", dark: "#d4cec0" },
+  { id: "vermilion", label: "Vermilion", hex: "#ea580c", dark: "#b83d04" },
+  { id: "terracotta", label: "Terracotta", hex: "#a55336", dark: "#793821" },
+  { id: "sage", label: "Sage", hex: "#859472", dark: "#5f6e4d" },
+  { id: "cobalt", label: "Cobalt", hex: "#1f58b8", dark: "#153d84" },
+  { id: "charcoal", label: "Charcoal", hex: "#32353a", dark: "#1b1d20" },
+  { id: "ochre", label: "Ochre", hex: "#d89d10", dark: "#a37206" },
+  { id: "burgundy", label: "Burgundy", hex: "#6d2633", dark: "#4b1620" },
+  { id: "plum", label: "Plum", hex: "#47374f", dark: "#2e2234" },
+  { id: "teal", label: "Deep teal", hex: "#245760", dark: "#15383e" },
+  { id: "rose", label: "Dusty rose", hex: "#c77a82", dark: "#99535b" },
+  { id: "lime", label: "Chartreuse", hex: "#a9b614", dark: "#7a840a" },
+];
+
+const CAPSULE_SURFACES = [
+  { id: "solid", label: "Solid" },
+  { id: "vermilion-flow", label: "Vermilion flow" },
+  { id: "cobalt-wave", label: "Cobalt wave" },
+  { id: "moss-speckle", label: "Moss speckle" },
+];
+
+const RAIL_FINISHES = [
+  { id: "charcoal", label: "Original charcoal" },
+  { id: "steel", label: "Brushed steel" },
+  { id: "chrome", label: "Chrome" },
+  { id: "aluminum", label: "Satin aluminum" },
+  { id: "nickel", label: "Warm nickel" },
+  { id: "champagne", label: "Champagne" },
+  { id: "titanium", label: "Titanium" },
+];
+
+const FAST_BIGRAMS = new Set([
+  "th", "he", "in", "er", "an", "re", "on", "at", "en", "nd",
+  "ti", "es", "or", "te", "of", "ed", "is", "it", "al", "de",
+  "st", "ar", "to", "nt", "ng", "se", "ha", "as", "ou", "io",
+]);
+
+// Lightweight native Web Audio mechanical typewriter sound synthesizer (zero audio files/deps)
+function createTypewriterSound() {
+  let ctx = null;
+  let noiseBuf = null;
+
+  const ensureCtx = () => {
+    if (typeof window === "undefined") return null;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    if (!ctx) {
+      try {
+        ctx = new AudioCtx();
+      } catch {
+        return null;
+      }
+    }
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
+    if (!noiseBuf && ctx) {
+      const len = Math.floor(ctx.sampleRate * 0.04);
+      noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i += 1) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.24));
+      }
+    }
+    return ctx;
+  };
+
+  const playKey = (heavy = false, seed = 0) => {
+    const audio = ensureCtx();
+    if (!audio || audio.state !== "running") return;
+    const now = audio.currentTime;
+
+    // 1. Crisp steel typebar-on-ribbon clack (bandpass noise transient)
+    const src = audio.createBufferSource();
+    src.buffer = noiseBuf;
+    const filter = audio.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(2600 + ((seed * 197) % 1300), now);
+    filter.Q.setValueAtTime(1.8, now);
+    const gain = audio.createGain();
+    gain.gain.setValueAtTime(heavy ? 0.12 : 0.085, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
+    src.connect(filter).connect(gain).connect(audio.destination);
+    src.start(now);
+
+    // 2. Subtle rubber-platen mechanical thump
+    const osc = audio.createOscillator();
+    const oscGain = audio.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(heavy ? 148 : 132, now);
+    osc.frequency.exponentialRampToValueAtTime(52, now + 0.032);
+    oscGain.gain.setValueAtTime(heavy ? 0.07 : 0.048, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.034);
+    osc.connect(oscGain).connect(audio.destination);
+    osc.start(now);
+    osc.stop(now + 0.036);
+  };
+
+  const playReturn = () => {
+    const audio = ensureCtx();
+    if (!audio || audio.state !== "running") return;
+    const now = audio.currentTime;
+
+    // Vintage margin bell "ding!" (damped metallic overtones)
+    [2140, 4320].forEach((freq, i) => {
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(i === 0 ? 0.052 : 0.018, now);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + (i === 0 ? 0.36 : 0.22));
+      osc.connect(gain).connect(audio.destination);
+      osc.start(now);
+      osc.stop(now + 0.38);
+    });
+
+    // Soft 3-tick mechanical platen ratchet roll-up
+    [0.06, 0.11, 0.16].forEach((offset, idx) => {
+      const src = audio.createBufferSource();
+      src.buffer = noiseBuf;
+      const filter = audio.createBiquadFilter();
+      filter.type = "highpass";
+      filter.frequency.setValueAtTime(1900 + idx * 240, now + offset);
+      const gain = audio.createGain();
+      gain.gain.setValueAtTime(0.038, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.02);
+      src.connect(filter).connect(gain).connect(audio.destination);
+      src.start(now + offset);
+    });
+  };
+
+  const unlock = () => {
+    ensureCtx();
+  };
+
+  return { playKey, playReturn, unlock };
+}
+
+function renderManualLineTokens(line, lineIdx) {
+  if (!line) return null;
+  const tokens = [];
+  const regex = /(\S+|\s+)/g;
+  let match;
+  while ((match = regex.exec(line)) !== null) {
+    tokens.push({
+      text: match[0],
+      start: match.index,
+      isSpace: /^\s+$/.test(match[0]),
+    });
+  }
+  return tokens.map((tok) =>
+    tok.isSpace ? (
+      <span key={`l${lineIdx}-s${tok.start}`} className="ca-tw-manual-space">
+        {tok.text}
+      </span>
+    ) : (
+      <span
+        key={`l${lineIdx}-w${tok.start}`}
+        className={`ca-tw-manual-word${tok.text.length > 26 ? " is-breakable" : ""}`}
+      >
+        {Array.from(tok.text).map((ch, i) => (
+          <span key={`l${lineIdx}-c${tok.start + i}`} className="ca-tw-manual-char">
+            {ch}
+          </span>
+        ))}
+      </span>
+    )
+  );
+}
+
+function HeroTypewriterBlock({ readyToType, settingsOpen, onCloseSettings }) {
   const rootRef = useRef(null);
   const paperRef = useRef(null);
-  const rollerRef = useRef(null);
-  const needleRef = useRef(null);
-  const tiltRef = useRef(null);
+  const railRef = useRef(null);
+  const capsuleRef = useRef(null);
+  const manualInputRef = useRef(null);
+  const manualSheetRef = useRef(null);
+  const manualCaretRef = useRef(null);
+  const strikeToggleRef = useRef(false);
+  const soundRef = useRef(null);
+  const soundEnabledRef = useRef(true);
+  const finishTypingRef = useRef(null);
+  const manualReturnTimerRef = useRef(0);
+  const lastManualActionRef = useRef(null);
+  const prevManualRatioRef = useRef(14);
+  const dragRef = useRef({ active: false, pointerId: null, startX: 0, moved: false, lastStrikeX: 0 });
+
   const [isDone, setIsDone] = useState(false);
-  const [runId, setRunId] = useState(0);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualFocused, setManualFocused] = useState(false);
+  const [manualText, setManualText] = useState("");
+  const [studioTab, setStudioTab] = useState("capsule");
+  const [nightMode, setNightMode] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [capsuleModel, setCapsuleModel] = useState("classic");
+  const [capsuleColorId, setCapsuleColorId] = useState("original");
+  const [capsuleSurface, setCapsuleSurface] = useState("solid");
+  const [railMode, setRailMode] = useState("metal");
+  const [railFinish, setRailFinish] = useState("charcoal");
 
-  const handlePointerMove = (e) => {
-    const tiltEl = tiltRef.current;
-    if (!tiltEl || window.innerWidth < 1024) return;
-    const rect = tiltEl.getBoundingClientRect();
-    const nx = ((e.clientX - rect.left) / Math.max(rect.width, 1) - 0.5) * 2;
-    const ny = ((e.clientY - rect.top) / Math.max(rect.height, 1) - 0.5) * 2;
-    tiltEl.style.setProperty("--tw-ry", `${(nx * 2.8).toFixed(2)}deg`);
-    tiltEl.style.setProperty("--tw-rx", `${(-ny * 2.2).toFixed(2)}deg`);
+  const activeColor = CAPSULE_COLORS.find((c) => c.id === capsuleColorId) || CAPSULE_COLORS[0];
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    soundRef.current = createTypewriterSound();
+    const unlockOnce = () => {
+      if (soundEnabledRef.current && soundRef.current) {
+        soundRef.current.unlock();
+      }
+    };
+    window.addEventListener("pointerdown", unlockOnce, { passive: true, once: true });
+    window.addEventListener("keydown", unlockOnce, { passive: true, once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlockOnce);
+      window.removeEventListener("keydown", unlockOnce);
+      clearTimeout(manualReturnTimerRef.current);
+    };
+  }, []);
+
+  // Alternating CSS keyframe trigger (.strike-a / .strike-b) guarantees a full crisp T-hammer swing + recoil on EVERY keystroke
+  const pulseHammer = (heavy = false, seed = 0) => {
+    const cap = capsuleRef.current;
+    if (cap) {
+      strikeToggleRef.current = !strikeToggleRef.current;
+      cap.classList.remove("strike-a", "strike-b");
+      cap.classList.add(strikeToggleRef.current ? "strike-a" : "strike-b");
+    }
+    if (soundEnabledRef.current && soundRef.current) {
+      soundRef.current.playKey(heavy, seed);
+    }
   };
 
-  const handlePointerLeave = () => {
-    const tiltEl = tiltRef.current;
-    if (!tiltEl) return;
-    tiltEl.style.setProperty("--tw-ry", "0deg");
-    tiltEl.style.setProperty("--tw-rx", "0deg");
+  const triggerCarriageReturn = (targetPct, withBell = true) => {
+    const cap = capsuleRef.current;
+    if (cap) {
+      cap.classList.add("is-returning");
+      cap.style.left = `${targetPct.toFixed(1)}%`;
+      clearTimeout(manualReturnTimerRef.current);
+      manualReturnTimerRef.current = setTimeout(() => {
+        cap.classList.remove("is-returning");
+      }, 280);
+    }
+    if (withBell && soundEnabledRef.current && soundRef.current) {
+      soundRef.current.playReturn();
+    }
   };
+
+  const focusManualInput = () => {
+    const el = manualInputRef.current;
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    const end = el.value.length;
+    try {
+      el.setSelectionRange(end, end);
+    } catch {
+      // ignore selection errors on non-focusable states
+    }
+  };
+
+  const enterManualMode = () => {
+    if (finishTypingRef.current) finishTypingRef.current(false);
+    if (paperRef.current) {
+      paperRef.current.style.setProperty("--paper-y", "0px");
+    }
+    if (soundEnabledRef.current && soundRef.current) {
+      soundRef.current.unlock();
+    }
+    lastManualActionRef.current = { type: "init", ch: "", len: manualText.length };
+    setManualMode(true);
+    // Focus synchronously inside click gesture so mobile soft keyboards open immediately
+    focusManualInput();
+  };
+
+  const exitManualMode = () => {
+    setManualMode(false);
+    setManualFocused(false);
+    manualInputRef.current?.blur();
+    if (paperRef.current) {
+      paperRef.current.style.setProperty("--paper-y", "0px");
+    }
+    triggerCarriageReturn(50, false);
+    pulseHammer(false, 3);
+  };
+
+  const clearManualSheet = () => {
+    lastManualActionRef.current = { type: "clear", ch: "", len: 0 };
+    setManualText("");
+    focusManualInput();
+  };
+
+  const handleManualInput = (e) => {
+    const nextVal = e.target.value;
+    const prevLen = manualText.length;
+    const added = nextVal.length > prevLen;
+    const deleted = nextVal.length < prevLen;
+    const addedSlice = added ? nextVal.slice(prevLen) : "";
+    const isNewline = added && addedSlice.includes("\n");
+    const lastCh = nextVal.slice(-1);
+
+    lastManualActionRef.current = {
+      type: isNewline ? "return" : deleted ? "back" : "char",
+      ch: lastCh,
+      len: nextVal.length,
+    };
+    setManualText(nextVal);
+  };
+
+  // Sync capsule print-head, T-hammer strike, and carriage return directly with the live manual caret
+  useLayoutEffect(() => {
+    if (!manualMode) return;
+    const paper = paperRef.current;
+    const caret = manualCaretRef.current;
+    const cap = capsuleRef.current;
+    const sheet = manualSheetRef.current;
+    if (sheet) {
+      sheet.scrollTop = sheet.scrollHeight;
+    }
+    if (!paper || !caret || !cap) return;
+
+    const paperRect = paper.getBoundingClientRect();
+    const caretRect = caret.getBoundingClientRect();
+    const railW = Math.max(paperRect.width, 1);
+    const clampEdge = window.innerWidth >= 640 ? 11 : 17;
+    const rawPct = ((caretRect.left - paperRect.left) / railW) * 100;
+    const ratio = Math.min(100 - clampEdge, Math.max(clampEdge, rawPct));
+    const action = lastManualActionRef.current;
+    const wrappedToNewLine =
+      action?.type === "char" && prevManualRatioRef.current - ratio > 18;
+
+    if (action?.type === "return" || action?.type === "clear" || wrappedToNewLine) {
+      triggerCarriageReturn(ratio, true);
+    } else if (action?.type === "init") {
+      triggerCarriageReturn(ratio, true);
+    } else if (action?.type === "char") {
+      cap.classList.remove("is-returning");
+      cap.style.left = `${ratio.toFixed(1)}%`;
+      pulseHammer(/[A-Z.!?]/.test(action.ch), action.len);
+    } else if (action?.type === "back") {
+      cap.classList.remove("is-returning");
+      cap.style.left = `${ratio.toFixed(1)}%`;
+      pulseHammer(false, action.len);
+    } else {
+      cap.style.left = `${ratio.toFixed(1)}%`;
+    }
+
+    prevManualRatioRef.current = ratio;
+    lastManualActionRef.current = null;
+  }, [manualText, manualMode]);
+
+  const clampCapsulePercent = (clientX) => {
+    const railEl = railRef.current;
+    const capEl = capsuleRef.current;
+    if (!railEl || !capEl) return 50;
+    const railRect = railEl.getBoundingClientRect();
+    const railW = Math.max(railRect.width, 1);
+    const capHalf = capEl.offsetWidth / 2;
+    const clampInset = window.innerWidth >= 640 ? 32 : 22;
+    const minPct = ((clampInset + capHalf) / railW) * 100;
+    const maxPct = 100 - minPct;
+    const rawPct = ((clientX - railRect.left) / railW) * 100;
+    return Math.min(maxPct, Math.max(minPct, rawPct));
+  };
+
+  const moveCapsuleToX = (clientX, shouldStrike = true) => {
+    const capEl = capsuleRef.current;
+    if (!capEl) return;
+    const pct = clampCapsulePercent(clientX);
+    capEl.style.left = `${pct.toFixed(2)}%`;
+    if (shouldStrike) pulseHammer();
+  };
+
+  const handleCapsulePointerDown = (e) => {
+    const capEl = capsuleRef.current;
+    if (!capEl) return;
+    e.preventDefault();
+    if (typeof capEl.setPointerCapture === "function") {
+      try {
+        capEl.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore synthetic pointer capture errors
+      }
+    }
+    dragRef.current = {
+      active: true,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      moved: false,
+      lastStrikeX: e.clientX,
+    };
+    capEl.classList.add("is-dragging");
+  };
+
+  const handleCapsulePointerMove = (e) => {
+    const drag = dragRef.current;
+    const capEl = capsuleRef.current;
+    if (!drag.active || !capEl) return;
+
+    if (!drag.moved && Math.abs(e.clientX - drag.startX) >= 5) {
+      drag.moved = true;
+      // Hand instant manual control to the user if typing was still running
+      if (finishTypingRef.current) finishTypingRef.current(false);
+    }
+
+    if (drag.moved) {
+      const pct = clampCapsulePercent(e.clientX);
+      capEl.style.left = `${pct.toFixed(2)}%`;
+      if (Math.abs(e.clientX - drag.lastStrikeX) >= 18) {
+        drag.lastStrikeX = e.clientX;
+        pulseHammer();
+      }
+    }
+  };
+
+  const handleCapsulePointerEnd = (e) => {
+    const drag = dragRef.current;
+    const capEl = capsuleRef.current;
+    if (!drag.active) return;
+
+    const wasDragged = drag.moved;
+    drag.active = false;
+    drag.pointerId = null;
+
+    if (capEl) {
+      capEl.classList.remove("is-dragging");
+      if (typeof capEl.releasePointerCapture === "function") {
+        try {
+          if (capEl.hasPointerCapture?.(e.pointerId)) {
+            capEl.releasePointerCapture(e.pointerId);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (wasDragged) {
+      pulseHammer();
+    } else {
+      // Settings panel is opened strictly via the Settings button; clicking capsule gives a crisp hammer tap
+      pulseHammer();
+    }
+  };
+
+  const handleRailBarClick = (e) => {
+    if (e.target.closest(".ca-tw-capsule")) return;
+    if (finishTypingRef.current) finishTypingRef.current(false);
+    moveCapsuleToX(e.clientX, true);
+  };
+
+  const nudgeCapsule = (deltaPct) => {
+    const capEl = capsuleRef.current;
+    if (!capEl) return;
+    if (finishTypingRef.current) finishTypingRef.current(false);
+    const cur = parseFloat(capEl.style.left || "50");
+    const minPct = window.innerWidth >= 640 ? 11 : 18;
+    const next = Math.min(100 - minPct, Math.max(minPct, cur + deltaPct));
+    capEl.style.left = `${next.toFixed(2)}%`;
+    pulseHammer();
+  };
+
+  // Close floating Settings panel with Escape key
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") onCloseSettings();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [settingsOpen, onCloseSettings]);
+
+  // Restore focus to manual sheet when closing Settings while in Manual Mode
+  useEffect(() => {
+    if (manualMode && !settingsOpen) {
+      focusManualInput();
+    }
+  }, [manualMode, settingsOpen]);
 
   useEffect(() => {
     const root = rootRef.current;
     const paper = paperRef.current;
-    const roller = rollerRef.current;
-    const needle = needleRef.current;
-    if (!root || !paper || !heroRevealed) return;
+    const capsule = capsuleRef.current;
+    if (!root || !paper || !readyToType) return;
 
     const nodes = Array.from(root.querySelectorAll("[data-tw]"));
     if (!nodes.length) return;
@@ -2665,135 +3182,172 @@ function HeroTypewriterBlock({ heroRevealed }) {
     let activeCaretNode = null;
     let finished = false;
     let rafId = 0;
-    let strikeTimer = 0;
+    let returnTimer = 0;
 
-    const setPaperPose = (yPx, rxDeg, rollerOffsetPx) => {
+    const setPaperPose = (yPx) => {
       paper.style.setProperty("--paper-y", `${yPx}px`);
-      paper.style.setProperty("--paper-rx", `${rxDeg}deg`);
-      if (roller) {
-        roller.style.setProperty("--roller-pos", `${rollerOffsetPx}px`);
-      }
     };
 
-    const finishAll = () => {
+    const finishAll = (recenterCapsule = true) => {
       if (finished) return;
       finished = true;
       cancelAnimationFrame(rafId);
-      clearTimeout(strikeTimer);
+      clearTimeout(returnTimer);
       if (activeCaretNode) {
         activeCaretNode.classList.remove("is-caret");
         activeCaretNode = null;
       }
       nodes.forEach((n) => n.classList.add("is-typed"));
-      setPaperPose(0, 0, -96);
-      if (needle) {
-        needle.classList.remove("is-striking");
-        needle.style.left = "50%";
+      setPaperPose(0);
+      if (capsule) {
+        capsule.classList.remove("strike-a", "strike-b", "is-returning");
+        if (recenterCapsule) capsule.style.left = "50%";
       }
       setIsDone(true);
     };
 
-    if (prefersReduced || (runId === 0 && window.scrollY > 45)) {
-      finishAll();
+    finishTypingRef.current = finishAll;
+
+    const heroIsOffscreen = () => root.getBoundingClientRect().bottom < 80;
+
+    if (prefersReduced || heroIsOffscreen()) {
+      finishAll(true);
       return;
     }
 
-    const startScrollY = window.scrollY;
-
-    // Reset state cleanly for initial load or replay
-    setIsDone(false);
+    // Reset cleanly on page load / reload so typing ALWAYS starts from Letter #1 ("T") right at the T-hammer
     nodes.forEach((n) => n.classList.remove("is-typed", "is-caret"));
 
-    // Measure flat paper geometry once before rAF (zero layout reads during animation)
-    setPaperPose(0, 0, 0);
+    // Measure flat paper & line baselines once with transition paused (zero layout reads during animation)
+    paper.style.transition = "none";
+    setPaperPose(0);
     const paperRect = paper.getBoundingClientRect();
-    const rulerWidth = Math.max(paperRect.width, 1);
+    const railWidth = Math.max(paperRect.width, 1);
     const lineBuckets = [];
     const meta = nodes.map((n) => {
       const r = n.getBoundingClientRect();
-      const rawX = (r.right - paperRect.left) / rulerWidth;
-      const ratio = Math.min(91, Math.max(9, rawX * 100));
+      const rawX = (r.left + r.width / 2 - paperRect.left) / railWidth;
+      const clampEdge = window.innerWidth >= 640 ? 11 : 17;
+      const ratio = Math.min(100 - clampEdge, Math.max(clampEdge, rawX * 100));
       const top = Math.round(r.top);
-      let lineIdx = lineBuckets.findIndex((t) => Math.abs(t - top) <= 12);
+      const bottom = Math.round(r.bottom);
+      let lineIdx = lineBuckets.findIndex((b) => Math.abs(b.top - top) <= 14);
       if (lineIdx === -1) {
         lineIdx = lineBuckets.length;
-        lineBuckets.push(top);
+        lineBuckets.push({ top, bottom });
+      } else if (bottom > lineBuckets[lineIdx].bottom) {
+        lineBuckets[lineIdx].bottom = bottom;
       }
-      return { ratio, lineIdx };
+      const ch = n.textContent || "";
+      const isWordStart = n.previousSibling === null && n.closest(".ca-tw-word") !== null;
+      return { ratio, lineIdx, ch, isWordStart };
     });
 
-    const totalLines = Math.max(lineBuckets.length, 1);
-    const maxFeedPx = window.innerWidth >= 1024 ? 86 : 64;
-    const poseForLine = (lineIdx) => {
-      const progress = Math.min(1, (lineIdx + 1) / totalLines);
-      const yPx = Math.round((1 - progress) * maxFeedPx);
-      const rxDeg = Number(((1 - progress) * 14).toFixed(2));
-      const rollerPx = -(lineIdx + 1) * 16;
-      return { yPx, rxDeg, rollerPx };
-    };
+    // Exact vertical paper offset per line so EVERY active line sits right above the T-hammer strike head
+    const lineFeedY = lineBuckets.map((b) =>
+      Math.max(0, Math.round(paperRect.bottom - b.bottom - 34))
+    );
 
-    // Start paper tucked neatly into the platen slot before first keystroke
-    setPaperPose(maxFeedPx + 14, 16, 0);
+    // Position Line 0 directly at the T-hammer before Letter #1 ("T") strikes
+    setPaperPose(lineFeedY[0] ?? 0);
+    if (capsule) capsule.style.left = `${meta[0].ratio.toFixed(1)}%`;
+    void paper.offsetHeight;
+    paper.style.transition = "";
 
-    // Build smooth mechanical schedule (headline -> icon pop -> carriage feed -> bio)
+    // Realistic human mechanical typewriter timing (natural bigram flow, shift hesitation, word breath & carriage return bell)
     const schedule = [];
-    let t = 220;
+    const lineReturnTimes = new Map();
+    let t = 200;
     let prevLine = 0;
+    let prevChar = "";
     nodes.forEach((n, idx) => {
       const kind = n.getAttribute("data-tw");
       const inTitle = !!n.closest(".ca-hero-title");
-      if (meta[idx].lineIdx > prevLine) {
-        t += 130; // smooth mechanical platen advance between lines
-        prevLine = meta[idx].lineIdx;
+      const inTagline = !!n.closest(".ca-hero-tagline-hand");
+      const { lineIdx, ch, isWordStart } = meta[idx];
+
+      if (lineIdx > prevLine) {
+        // Two-step mechanical carriage return: brief margin bell beat -> carriage zips left + paper rolls up -> ready beat
+        t += 95;
+        lineReturnTimes.set(idx, t);
+        t += 310;
+        prevLine = lineIdx;
+        prevChar = "";
       }
+
       schedule.push(t);
+
       if (kind === "icon") {
-        t += 160;
+        t += 185;
       } else {
-        t += inTitle ? 26 : 15;
+        const base = inTitle ? 66 : inTagline ? 50 : 42;
+        const bigram = (prevChar + ch).toLowerCase();
+        const bigramDelta = FAST_BIGRAMS.has(bigram) ? -10 : 0;
+        const shiftDelta = ch >= "A" && ch <= "Z" ? 42 : 0;
+        const wordDelta = isWordStart && idx > 0 ? 34 : 0;
+        const organicDelta = ((idx * 17) % 5) * 6 - 8;
+        t += Math.max(24, base + bigramDelta + shiftDelta + wordDelta + organicDelta);
       }
+
       t += Number(n.getAttribute("data-tw-pause") || 0);
+      prevChar = ch;
     });
 
     let cursor = 0;
     let startTime = 0;
-    let activeLine = -1;
+    let activeLine = 0;
+    let pendingReturnFor = -1;
 
     const step = (now) => {
       if (finished) return;
       if (!startTime) startTime = now;
       const elapsed = now - startTime;
 
-      let struck = false;
-      while (cursor < nodes.length && schedule[cursor] <= elapsed) {
+      // Trigger crisp mechanical carriage return + margin bell BEFORE the first letter of the next line strikes
+      const returnAt = lineReturnTimes.get(cursor);
+      if (returnAt !== undefined && pendingReturnFor !== cursor && elapsed >= returnAt) {
+        pendingReturnFor = cursor;
+        const nextInfo = meta[cursor];
+        activeLine = nextInfo.lineIdx;
+        setPaperPose(lineFeedY[activeLine] ?? 0);
+        if (capsule) {
+          capsule.classList.add("is-returning");
+          capsule.style.left = `${nextInfo.ratio.toFixed(1)}%`;
+          clearTimeout(returnTimer);
+          returnTimer = setTimeout(() => capsule.classList.remove("is-returning"), 290);
+        }
+        if (soundEnabledRef.current && soundRef.current) {
+          soundRef.current.playReturn();
+        }
+      }
+
+      // Advance strictly ONE single letter at a time directly above the moving T-hammer
+      if (cursor < nodes.length && schedule[cursor] <= elapsed) {
         const node = nodes[cursor];
         const info = meta[cursor];
         if (info.lineIdx !== activeLine) {
           activeLine = info.lineIdx;
-          const { yPx, rxDeg, rollerPx } = poseForLine(activeLine);
-          setPaperPose(yPx, rxDeg, rollerPx);
+          setPaperPose(lineFeedY[activeLine] ?? 0);
         }
         node.classList.add("is-typed");
         if (node.getAttribute("data-tw") === "char") {
           if (activeCaretNode) activeCaretNode.classList.remove("is-caret");
           node.classList.add("is-caret");
           activeCaretNode = node;
-          struck = true;
-        }
-        if (needle) {
-          needle.style.left = `${info.ratio.toFixed(1)}%`;
+          if (capsule) {
+            capsule.style.left = `${info.ratio.toFixed(1)}%`;
+            const isHeavy = /[A-Z.!?]/.test(info.ch);
+            pulseHammer(isHeavy, cursor);
+          }
+        } else if (capsule) {
+          capsule.style.left = `${info.ratio.toFixed(1)}%`;
+          pulseHammer(true, cursor);
         }
         cursor += 1;
       }
 
-      if (struck && needle) {
-        needle.classList.add("is-striking");
-        clearTimeout(strikeTimer);
-        strikeTimer = setTimeout(() => needle.classList.remove("is-striking"), 75);
-      }
-
       if (cursor >= nodes.length) {
-        finishAll();
+        finishAll(true);
         return;
       }
 
@@ -2801,135 +3355,459 @@ function HeroTypewriterBlock({ heroRevealed }) {
     };
 
     const onScrollFastForward = () => {
-      if (window.scrollY > startScrollY + 90) finishAll();
+      if (heroIsOffscreen()) finishAll(true);
     };
 
     window.addEventListener("scroll", onScrollFastForward, { passive: true });
     rafId = requestAnimationFrame(step);
 
     return () => {
+      finishTypingRef.current = null;
       cancelAnimationFrame(rafId);
-      clearTimeout(strikeTimer);
+      clearTimeout(returnTimer);
       window.removeEventListener("scroll", onScrollFastForward);
     };
-  }, [heroRevealed, runId]);
+  }, [readyToType]);
+
+  const capsuleStyle = {
+    "--cap-color": activeColor.hex,
+    "--cap-dark": activeColor.dark,
+  };
+
+  const railStyle =
+    railMode === "match"
+      ? {
+          "--rail-custom-hi": activeColor.hex,
+          "--rail-custom-lo": activeColor.dark,
+        }
+      : undefined;
+
+  const manualLines = manualText.split("\n");
 
   return (
     <div
       ref={rootRef}
-      className={`ca-tw-stage ${isDone ? "is-done" : ""}`}
-      onMouseMove={handlePointerMove}
-      onMouseLeave={handlePointerLeave}
+      className={`ca-tw-stage ${isDone ? "is-done" : ""} ${manualMode ? "is-manual" : ""} ${nightMode ? "is-night" : ""}`}
     >
       <div className="ca-tw-3d-shell">
-        <div ref={tiltRef} className="ca-tw-tilt-layer">
-          {/* 3D Paper Slot: hard-clipped at platen lip so sheet flows smoothly UP out of the roller */}
+        <div className="ca-tw-tilt-layer">
+          {/* Fixed Speckled Paper Slot: emerges smoothly UPWARD out of the Capsule & Rail */}
           <div className="ca-tw-paper-slot">
-            <div ref={paperRef} className="ca-tw-paper-3d">
-              {/* Big Bold Typewriter Headline with Spinning Icons */}
-              <h1 className="ca-hero-title">
-                <span className="ca-hero-title-chunk ca-hero-chunk-left">
-                  {renderTypedWords("Turning ideas into", "h1a", 60)}{" "}
-                  <span className="ca-inline-icon ca-scroll-icon-left">
-                    <span className="ca-tw-icon" data-tw="icon" data-tw-pause="90">
-                      <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
-                        <circle cx="20" cy="20" r="18" fill="var(--ca-green)" stroke="var(--ca-ink)" strokeWidth="2.2" />
-                        <circle cx="20" cy="20" r="11" fill="var(--ca-surface)" />
-                        <circle cx="20" cy="20" r="5" fill="var(--ca-green)" />
-                        <circle cx="14" cy="9" r="2.2" fill="var(--ca-ink)" />
-                      </svg>
-                    </span>
-                  </span>
-                </span>{" "}
-                <span className="ca-hero-title-chunk ca-hero-chunk-right">
-                  {renderTypedWords("powerful digital experiences.", "h1b", 70)}{" "}
-                  <span className="ca-inline-icon ca-scroll-icon-right">
-                    <span className="ca-tw-icon" data-tw="icon" data-tw-pause="140">
-                      <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
-                        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                          <ellipse
-                            key={angle}
-                            cx="20"
-                            cy="8"
-                            rx="4.5"
-                            ry="7.5"
-                            fill="var(--ca-magenta)"
-                            transform={`rotate(${angle} 20 20)`}
-                          />
-                        ))}
-                        <circle cx="20" cy="20" r="4" fill="var(--ca-ink)" />
-                      </svg>
-                    </span>
-                  </span>
-                </span>
-              </h1>
+            <div
+              ref={paperRef}
+              className={`ca-tw-paper-3d ${manualMode ? "is-manual-sheet" : ""}`}
+              onClick={(e) => {
+                if (!manualMode || e.target.closest(".ca-tw-paper-bar")) return;
+                focusManualInput();
+              }}
+            >
+              {/* Hidden native keyboard input (16px prevents iOS auto-zoom; mounted persistently so mobile tap focuses synchronously) */}
+              <textarea
+                ref={manualInputRef}
+                className="ca-tw-hidden-input"
+                value={manualText}
+                onChange={handleManualInput}
+                onFocus={() => setManualFocused(true)}
+                onBlur={() => setManualFocused(false)}
+                tabIndex={manualMode ? 0 : -1}
+                aria-hidden={!manualMode}
+                aria-label="Manual typewriter sheet input"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="sentences"
+                spellCheck={false}
+              />
 
-              <p className="ca-hero-bio-text">
-                {renderTypedWords("I design and develop", "b1")}{" "}
-                <span className="ca-hero-hl hl-yellow">
-                  {renderTypedWords("modern websites", "b2")}
-                </span>
-                {renderTypedWords(",", "b2c")}{" "}
-                <span className="ca-hero-hl hl-mint">
-                  {renderTypedWords("mobile applications", "b3")}
-                </span>
-                {renderTypedWords(",", "b3c")}{" "}
-                <span className="ca-hero-hl hl-pink">
-                  {renderTypedWords("intuitive user interfaces", "b4")}
-                </span>
-                {renderTypedWords(", and", "b4c")}{" "}
-                <span className="ca-hero-hl hl-purple">
-                  {renderTypedWords("distinctive brand identities", "b5")}
-                </span>
-                {renderTypedWords(
-                  ". I combine technology, creativity, and problem-solving to transform ideas into meaningful digital\u00A0products.",
-                  "b6"
+              {/* Neat paper-corner mode bar: + Type in portfolio view; Clear + Back in live manual view */}
+              <div className="ca-tw-paper-bar">
+                {!manualMode ? (
+                  <button
+                    type="button"
+                    className="ca-tw-paper-action"
+                    onClick={enterManualMode}
+                    aria-label="Start manual typewriter mode"
+                    title="Type manually letter by letter on this sheet"
+                  >
+                    + Type
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="ca-tw-paper-action"
+                      onClick={clearManualSheet}
+                      disabled={manualText.length === 0}
+                      aria-label="Clear manual sheet"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      className="ca-tw-paper-action is-primary"
+                      onClick={exitManualMode}
+                      aria-label="Back to portfolio sheet"
+                    >
+                      ← Back
+                    </button>
+                  </>
                 )}
-              </p>
+              </div>
 
-              <p className="ca-hand ca-hero-tagline-hand">
-                <span className="ca-tw-tagline-inner">
-                  <span className="ca-hero-hl hl-gold">
-                    Exploring ideas. Designing experiences. Building what&apos;s next.
+              {/* Portfolio Hero Copy (kept mounted in DOM so GSAP ScrollTrigger refs & 34px grid snap stay locked) */}
+              <div className={`ca-tw-portfolio-copy ${manualMode ? "is-hidden" : ""}`} aria-hidden={manualMode}>
+                <h1 className="ca-hero-title">
+                  <span className="ca-hero-title-chunk ca-hero-chunk-left">
+                    {renderTypedWords(DEFAULT_HERO_COPY.line1, "h1a", 70)}{" "}
+                    <span className="ca-inline-icon ca-scroll-icon-left">
+                      <span className="ca-tw-icon" data-tw="icon" data-tw-pause="100">
+                        <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
+                          <circle cx="20" cy="20" r="18" fill="var(--ca-green)" stroke="var(--ca-ink)" strokeWidth="2.2" />
+                          <circle cx="20" cy="20" r="11" fill="var(--ca-surface)" />
+                          <circle cx="20" cy="20" r="5" fill="var(--ca-green)" />
+                          <circle cx="14" cy="9" r="2.2" fill="var(--ca-ink)" />
+                        </svg>
+                      </span>
+                    </span>
                   </span>{" "}
-                  ✨
-                </span>
-              </p>
+                  <span className="ca-hero-title-chunk ca-hero-chunk-right">
+                    {renderTypedWords(DEFAULT_HERO_COPY.line2, "h1b", 80)}{" "}
+                    <span className="ca-inline-icon ca-scroll-icon-right">
+                      <span className="ca-tw-icon" data-tw="icon" data-tw-pause="160">
+                        <svg viewBox="0 0 40 40" className="ca-spin-slow" style={{ width: "100%", height: "100%" }}>
+                          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+                            <ellipse
+                              key={angle}
+                              cx="20"
+                              cy="8"
+                              rx="4.5"
+                              ry="7.5"
+                              fill="var(--ca-magenta)"
+                              transform={`rotate(${angle} 20 20)`}
+                            />
+                          ))}
+                          <circle cx="20" cy="20" r="4" fill="var(--ca-ink)" />
+                        </svg>
+                      </span>
+                    </span>
+                  </span>
+                </h1>
+
+                <p className="ca-hero-bio-text">{renderBioWithHighlights(DEFAULT_HERO_COPY.bio)}</p>
+
+                <p className="ca-hand ca-hero-tagline-hand">
+                  <span className="ca-hero-hl hl-gold">
+                    {renderTypedWords(DEFAULT_HERO_COPY.tagline, "tag")}
+                  </span>{" "}
+                  <span className="ca-tw-icon ca-tw-sparkle" data-tw="icon">✨</span>
+                </p>
+              </div>
+
+              {/* Live Letter-by-Letter Manual Typewriter Sheet */}
+              {manualMode && (
+                <div
+                  ref={manualSheetRef}
+                  className={`ca-tw-manual-sheet ${manualFocused ? "is-focused" : ""}`}
+                  role="region"
+                  aria-label="Live manual typewriter sheet"
+                >
+                  <div className="ca-tw-manual-lines">
+                    {manualLines.map((line, lineIdx) => {
+                      const isLastLine = lineIdx === manualLines.length - 1;
+                      return (
+                        <div
+                          key={`mline-${lineIdx}`}
+                          className={`ca-tw-manual-line ${isLastLine ? "is-active" : ""}`}
+                        >
+                          {renderManualLineTokens(line, lineIdx)}
+                          {isLastLine && (
+                            <span
+                              ref={manualCaretRef}
+                              className="ca-tw-manual-caret"
+                              aria-hidden="true"
+                            />
+                          )}
+                          {isLastLine && manualText.length === 0 && (
+                            <span className="ca-tw-manual-placeholder">
+                              A blank page is waiting. Start typing…
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 3D Cylindrical Platen Roller + Brushed Brass Brother-inspired Carriage Scale */}
-          <div className="ca-tw-platen-assembly" aria-label="Typewriter carriage mechanism">
-            <div ref={rollerRef} className="ca-tw-roller" aria-hidden="true">
-              <span className="ca-tw-roller-knob left" />
-              <span className="ca-tw-roller-bar" />
-              <span className="ca-tw-roller-knob right" />
+          {/* Minimalist Capsule & Cylindrical Metal Rail (fixed rail, draggable capsule print-head) */}
+          <div
+            ref={railRef}
+            className="ca-tw-rail-assembly"
+            onClick={handleRailBarClick}
+            aria-label="Draggable capsule typewriter rail"
+          >
+            <div
+              className={`ca-tw-rail-bar ${railMode === "match" ? "rail-match" : `rail-${railFinish}`}`}
+              style={railStyle}
+            >
+              <span className="ca-tw-rail-clamp left" aria-hidden="true" />
+              <span className="ca-tw-rail-clamp right" aria-hidden="true" />
             </div>
 
-            <div className="ca-tw-brass-rail">
-              <div className="ca-tw-ruler-track">
-                <span className="ca-tw-scale-num" style={{ left: "14%" }}>20</span>
-                <span className="ca-tw-scale-center-badge" style={{ left: "50%" }}>50</span>
-                <span className="ca-tw-scale-num" style={{ left: "86%" }}>80</span>
-                <span ref={needleRef} className="ca-tw-carriage-fork" style={{ left: "12%" }} aria-hidden="true">
-                  <svg viewBox="0 0 24 22" fill="none">
-                    <path d="M5 2 L9.5 14 L14.5 14 L19 2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M12 14 L12 20" stroke="var(--ca-orange)" strokeWidth="2.6" strokeLinecap="round" />
-                  </svg>
+            {/* Draggable 3D Capsule Print-Head + T-Hammer + Headlamp Beam */}
+            <div
+              ref={capsuleRef}
+              className={`ca-tw-capsule model-${capsuleModel} surface-${capsuleSurface}`}
+              style={{ ...capsuleStyle, left: "50%" }}
+              onPointerDown={handleCapsulePointerDown}
+              onPointerMove={handleCapsulePointerMove}
+              onPointerUp={handleCapsulePointerEnd}
+              onPointerCancel={handleCapsulePointerEnd}
+              role="slider"
+              tabIndex={0}
+              aria-label="Drag capsule machine left or right along rail"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={50}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowLeft") {
+                  e.preventDefault();
+                  nudgeCapsule(-6);
+                } else if (e.key === "ArrowRight") {
+                  e.preventDefault();
+                  nudgeCapsule(6);
+                }
+              }}
+              title="Drag left or right along rail"
+            >
+              <span className="ca-tw-headlamp-beam" aria-hidden="true" />
+              <span className="ca-tw-t-hammer" aria-hidden="true">
+                <span className="ca-tw-hammer-head" />
+                <span className="ca-tw-hammer-stem" />
+              </span>
+              <span className="ca-tw-capsule-shell" aria-hidden="true">
+                <span className="ca-tw-hammer-slot" />
+                <span className="ca-tw-leds">
+                  <span className="ca-tw-led led-power" />
+                  <span className="ca-tw-led led-strike" />
+                  <span className="ca-tw-led led-return" />
                 </span>
-              </div>
-              <button
-                type="button"
-                className="ca-tw-retype-btn"
-                onClick={() => setRunId((n) => n + 1)}
-                title="Feed fresh sheet & replay 3D typewriter"
-              >
-                {isDone ? "↻ RETYPE" : "● TYPING"}
-              </button>
+              </span>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Unified Floating Settings Sheet (portaled to body so it always renders cleanly above Hero badges/avatars) */}
+      {settingsOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="ca-tw-studio-sheet" role="dialog" aria-label="Typewriter settings">
+            <div className="ca-tw-studio-handle" aria-hidden="true" />
+            <div className="ca-tw-studio-header">
+              <h3 className="ca-tw-studio-title">Settings</h3>
+              <button
+                type="button"
+                className="ca-tw-studio-done"
+                onClick={onCloseSettings}
+              >
+                Done
+              </button>
+            </div>
+
+            <div className="ca-tw-seg-tabs is-three">
+              <button
+                type="button"
+                className={`ca-tw-seg-tab ${!nightMode ? "active" : ""}`}
+                onClick={() => {
+                  setNightMode(false);
+                  pulseHammer(false, 1);
+                }}
+              >
+                ☀ Day
+              </button>
+              <button
+                type="button"
+                className={`ca-tw-seg-tab ${nightMode ? "active" : ""}`}
+                onClick={() => {
+                  setNightMode(true);
+                  pulseHammer(false, 2);
+                }}
+              >
+                ☾ Night
+              </button>
+              <button
+                type="button"
+                className={`ca-tw-seg-tab ${soundEnabled ? "active" : ""}`}
+                onClick={() => {
+                  const next = !soundEnabled;
+                  setSoundEnabled(next);
+                  soundEnabledRef.current = next;
+                  if (next && soundRef.current) {
+                    soundRef.current.unlock();
+                    soundRef.current.playKey(true, 7);
+                  }
+                }}
+                aria-pressed={soundEnabled}
+              >
+                {soundEnabled ? "🔊 Sound" : "🔇 Muted"}
+              </button>
+            </div>
+
+            <div className="ca-tw-seg-tabs is-sub">
+              <button
+                type="button"
+                className={`ca-tw-seg-tab ${studioTab === "capsule" ? "active" : ""}`}
+                onClick={() => setStudioTab("capsule")}
+              >
+                Capsule
+              </button>
+              <button
+                type="button"
+                className={`ca-tw-seg-tab ${studioTab === "rail" ? "active" : ""}`}
+                onClick={() => setStudioTab("rail")}
+              >
+                Rail
+              </button>
+            </div>
+
+            {studioTab === "capsule" ? (
+              <div className="ca-tw-studio-body">
+                <div className="ca-tw-studio-label-row">
+                  <span className="ca-tw-studio-label">
+                    {CAPSULE_MODELS.find((m) => m.id === capsuleModel)?.label}
+                  </span>
+                </div>
+                <div className="ca-tw-model-grid">
+                  {CAPSULE_MODELS.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className={`ca-tw-model-option ${capsuleModel === m.id ? "active" : ""}`}
+                      onClick={() => {
+                        setCapsuleModel(m.id);
+                        pulseHammer();
+                      }}
+                    >
+                      <span className="ca-tw-mini-wrap">
+                        <span
+                          className={`ca-tw-mini-capsule model-${m.id} surface-solid`}
+                          style={
+                            m.id === "classic"
+                              ? capsuleStyle
+                              : m.id === "voxel"
+                                ? { "--cap-color": "#9da3ab", "--cap-dark": "#5f656e" }
+                                : m.id === "volcanic"
+                                  ? { "--cap-color": "#3d4044", "--cap-dark": "#1d1f22" }
+                                  : { "--cap-color": "#9bc2ba", "--cap-dark": "#6c9890" }
+                          }
+                        >
+                          <span className="ca-tw-mini-dots"><i /><i /><i /></span>
+                        </span>
+                      </span>
+                      <span className="ca-tw-option-name">{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="ca-tw-studio-label-row">
+                  <span className="ca-tw-studio-label">Color</span>
+                  <span className="ca-tw-studio-value">{activeColor.label}</span>
+                </div>
+                <div className="ca-tw-color-grid">
+                  {CAPSULE_COLORS.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={`ca-tw-color-dot ${capsuleColorId === c.id ? "active" : ""}`}
+                      style={{ "--dot-bg": c.hex, "--dot-dark": c.dark }}
+                      onClick={() => {
+                        setCapsuleColorId(c.id);
+                        setCapsuleSurface("solid");
+                        pulseHammer();
+                      }}
+                      title={c.label}
+                      aria-label={`Color ${c.label}`}
+                    />
+                  ))}
+                </div>
+
+                <div className="ca-tw-studio-label-row">
+                  <span className="ca-tw-studio-label">Surface</span>
+                  <span className="ca-tw-studio-value">
+                    {CAPSULE_SURFACES.find((s) => s.id === capsuleSurface)?.label}
+                  </span>
+                </div>
+                <div className="ca-tw-surface-grid">
+                  {CAPSULE_SURFACES.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      className={`ca-tw-surface-option ${capsuleSurface === s.id ? "active" : ""}`}
+                      onClick={() => {
+                        setCapsuleSurface(s.id);
+                        pulseHammer();
+                      }}
+                    >
+                      <span
+                        className={`ca-tw-mini-capsule is-sm model-classic surface-${s.id}`}
+                        style={capsuleStyle}
+                      >
+                        <span className="ca-tw-mini-dots"><i /><i /><i /></span>
+                      </span>
+                      <span className="ca-tw-option-name">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="ca-tw-studio-body">
+                <div className="ca-tw-seg-tabs is-rail-mode">
+                  <button
+                    type="button"
+                    className={`ca-tw-seg-tab ${railMode === "metal" ? "active" : ""}`}
+                    onClick={() => {
+                      setRailMode("metal");
+                      pulseHammer();
+                    }}
+                  >
+                    {railMode === "metal" ? "[x] Metal finish" : "Metal finish"}
+                  </button>
+                  <button
+                    type="button"
+                    className={`ca-tw-seg-tab ${railMode === "match" ? "active" : ""}`}
+                    onClick={() => {
+                      setRailMode("match");
+                      pulseHammer();
+                    }}
+                  >
+                    {railMode === "match" ? "[x] Match capsule" : "Match capsule"}
+                  </button>
+                </div>
+
+                <div className="ca-tw-rail-grid">
+                  {RAIL_FINISHES.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      className={`ca-tw-rail-option ${railMode === "metal" && railFinish === r.id ? "active" : ""}`}
+                      onClick={() => {
+                        setRailMode("metal");
+                        setRailFinish(r.id);
+                        pulseHammer();
+                      }}
+                    >
+                      <span className={`ca-tw-rail-swatch rail-${r.id}`} />
+                      <span className="ca-tw-option-name">{r.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
@@ -2955,6 +3833,7 @@ export default function App() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [twSettingsOpen, setTwSettingsOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [reactionsCount, setReactionsCount] = useState(1);
 
@@ -3236,12 +4115,11 @@ export default function App() {
         const hlSpans = homeEl.querySelectorAll(".ca-hero-hl");
         const bioEl = homeEl.querySelector(".ca-hero-bio-text");
         const taglineEl = homeEl.querySelector(".ca-hero-tagline-hand");
-        const twShell = homeEl.querySelector(".ca-tw-3d-shell");
 
         const startAtRest = () => `top ${Math.round(homeEl.offsetTop)}px`;
         const splitDist = isDesktop ? 44 : 14;
 
-        // 1. 3D typewriter sheet flow + opposite-direction kinetic split + icon spin
+        // 1. Fixed paper sheet stays rock-solid; headline chunks glide subtly + icons spin on scroll
         const kineticTl = gsap.timeline({
           scrollTrigger: {
             trigger: homeEl,
@@ -3252,21 +4130,6 @@ export default function App() {
           },
         });
 
-        if (twShell) {
-          kineticTl.fromTo(
-            twShell,
-            { rotateX: 0, y: 0, scale: 1 },
-            {
-              rotateX: isDesktop ? 16 : 9,
-              y: isDesktop ? -26 : -14,
-              scale: isDesktop ? 0.96 : 0.98,
-              transformPerspective: 1100,
-              transformOrigin: "50% 88%",
-              ease: "none",
-            },
-            0
-          );
-        }
         if (leftChunk) {
           kineticTl.fromTo(leftChunk, { x: 0 }, { x: -splitDist, ease: "none" }, 0);
         }
@@ -3323,6 +4186,51 @@ export default function App() {
     );
 
     mm.add("(prefers-reduced-motion: no-preference)", () => {
+      // Home 01 · ABOUT: smooth reveal for Focus note & jagged skill stamps on both desktop and mobile
+      const focusCard = document.querySelector("#about .ca-about-focus-card");
+      if (focusCard) {
+        gsap.fromTo(
+          focusCard,
+          { y: 38, rotation: -1.4, opacity: 0 },
+          {
+            y: 0,
+            rotation: 0,
+            opacity: 1,
+            duration: 0.72,
+            ease: "power3.out",
+            clearProps: "transform",
+            scrollTrigger: {
+              trigger: focusCard,
+              start: "top 88%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        );
+      }
+
+      const skillStampsWrap = document.querySelector("#about .ca-skills-stamps-grid");
+      const skillStamps = document.querySelectorAll("#about .ca-skill-stamp-group");
+      if (skillStampsWrap && skillStamps.length) {
+        gsap.fromTo(
+          skillStamps,
+          { y: 34, scale: 0.9, opacity: 0 },
+          {
+            y: 0,
+            scale: 1,
+            opacity: 1,
+            duration: 0.62,
+            stagger: 0.08,
+            ease: "back.out(1.4)",
+            clearProps: "transform",
+            scrollTrigger: {
+              trigger: skillStampsWrap,
+              start: "top 88%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        );
+      }
+
       // Home 02 · WHAT I DO: staggered 4-card rise with subtle scrapbook tilt + CTA button
       const serviceGrid = document.querySelector("#services .ca-universe-grid");
       const serviceCards = document.querySelectorAll("#services .ca-universe-card");
@@ -3773,6 +4681,30 @@ export default function App() {
               </svg>
             </a>
 
+            {/* Typewriter Settings Button in Homebar (Desktop + Mobile) */}
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (currentPage !== "home") {
+                  navigateTo("home");
+                  setTwSettingsOpen(true);
+                } else {
+                  setTwSettingsOpen((v) => !v);
+                }
+              }}
+              className={`ca-settings-nav-btn ca-mono ${twSettingsOpen ? "active" : ""}`}
+              aria-label="Settings"
+              aria-expanded={twSettingsOpen}
+              title="Typewriter Settings (Day/Night, Sound, Capsule, Rail)"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" width="15" height="15" aria-hidden="true">
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              <span className="ca-settings-nav-label">Settings</span>
+            </button>
+
             {/* Contact Button (hidden on contact page to match template) */}
             {currentPage !== "contact" && (
               <button
@@ -4045,7 +4977,11 @@ export default function App() {
               </div>
             </div>
 
-            <HeroTypewriterBlock heroRevealed={heroRevealed} />
+            <HeroTypewriterBlock
+              readyToType={heroRevealed && !showSplash}
+              settingsOpen={twSettingsOpen}
+              onCloseSettings={() => setTwSettingsOpen(false)}
+            />
 
             {/* Buttons: Explore What I Do · Let's Connect */}
             <div className="ca-hero-cta-group">
